@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
+import { config } from "../config";
 import { MissionService } from "../services/missionService";
 import { SettlementExecutionService } from "../services/settlementExecutionService";
-import { buildSettlementPlan } from "../services/settlementService";
+import { buildSettlementPlan, calculateFeeAndPool } from "../services/settlementService";
 import { requireAdminApiKey } from "../middleware/auth";
 
 type AsyncRoute = (request: any, response: any, next: any) => Promise<unknown>;
@@ -44,11 +45,76 @@ const resolveMissionSchema = z.object({
   )
 });
 
+const intakeMissionSchema = z.object({
+  title: z.string().min(1),
+  problemStatement: z.string().min(1),
+  budgetDrops: z.string().regex(/^\d+$/),
+  companyWallet: z.string().min(1)
+});
+
+function buildClarificationBrief(input: z.infer<typeof intakeMissionSchema>) {
+  const { platformFee, contributorPool } = calculateFeeAndPool(input.budgetDrops, config.platformFeeBps);
+
+  return {
+    intakeSummary: `The platform agent reframed "${input.title}" into an escrow-backed mission with measurable outcomes and contributor attribution.`,
+    clarifyingQuestions: [
+      "What does a clearly successful final outcome look like for the company?",
+      "Which constraints or failure cases must every contribution respect?",
+      "What types of contribution should be rewarded even if they are partial rather than final?"
+    ],
+    structuredMission: {
+      objective: input.problemStatement,
+      expectedOutputs: [
+        "A stronger final solution that directly improves the target problem",
+        "Partial solution bricks that materially improve quality, relevance, or completeness",
+        "Evidence explaining why a contribution changes the probability of success"
+      ],
+      successCriteria: [
+        "Contributions should improve the solved outcome, not just add volume.",
+        "Redundant or low-signal submissions should receive zero.",
+        "Useful partial work should remain rewardable even without a single winner."
+      ],
+      evaluationDimensions: [
+        "relevance",
+        "usefulness",
+        "uniqueness",
+        "marginal improvement to final solution"
+      ]
+    },
+    proposedEconomics: {
+      totalBudgetDrops: input.budgetDrops,
+      platformFeeBps: config.platformFeeBps,
+      platformFeeDrops: platformFee,
+      contributorPoolDrops: contributorPool
+    }
+  };
+}
+
 export function createMissionRouter(
   missionService: MissionService,
   settlementExecutionService: SettlementExecutionService
 ): Router {
   const router = Router();
+
+  router.post("/intake/clarify", asyncHandler(async (request, response) => {
+    const input = intakeMissionSchema.parse(request.body);
+    response.json({
+      clarification: buildClarificationBrief(input)
+    });
+  }));
+
+  router.post("/intake", asyncHandler(async (request, response) => {
+    const input = intakeMissionSchema.parse(request.body);
+    const mission = await missionService.createMission({
+      ...input,
+      feeBps: config.platformFeeBps
+    });
+
+    response.status(201).json({
+      mission,
+      clarification: buildClarificationBrief(input)
+    });
+  }));
 
   router.get("/", asyncHandler(async (_request, response) => {
     const missions = await missionService.listMissions();

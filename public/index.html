@@ -219,9 +219,13 @@
           <aside class="stack-column">
             <article class="panel control-panel compact-panel">
               <div class="panel-header">
-                <h3>Operator access</h3>
-                <span class="pill muted">Secure</span>
+                <h3>Operator tools</h3>
+                <span class="pill muted">Optional</span>
               </div>
+              <p class="helper-copy">
+                The admin key is only for platform-controlled actions like escrow funding and settlement. Company
+                problem intake below works without it.
+              </p>
               <label>
                 Admin API key
                 <input id="prod-api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
@@ -257,16 +261,19 @@
                   Budget in drops
                   <input id="prod-budget" type="text" value="1000000" />
                 </label>
-                <label>
-                  Platform fee (bps)
-                  <input id="prod-fee-bps" type="number" value="1000" min="0" max="10000" />
-                </label>
+                <div class="metric-inline">
+                  <span class="meta-label">Platform fee</span>
+                  <strong id="prod-fee-preview">10% of mission budget</strong>
+                </div>
               </div>
               <div class="button-stack">
+                <button id="prod-clarify-mission" type="button" class="secondary-button">Run platform clarification</button>
                 <button id="prod-create-mission" type="button">Create mission draft</button>
-                <button id="prod-fund-mission" type="button" class="secondary-button">Fund selected mission</button>
+                <button id="prod-fund-mission" type="button" class="secondary-button">Operator locks XRPL escrow</button>
                 <button id="prod-refresh" type="button" class="secondary-button">Refresh mission data</button>
               </div>
+              <div id="prod-status" class="notice-banner hidden"></div>
+              <div id="prod-clarification" class="clarification-panel hidden"></div>
             </article>
 
             <article class="panel">

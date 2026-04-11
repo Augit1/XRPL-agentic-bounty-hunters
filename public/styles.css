@@ -313,14 +313,17 @@ h4 {
 .mission-list,
 .workflow-rail,
 .form-grid,
-.explorer-links {
+.explorer-links,
+.clarification-grid,
+.pill-row {
   display: grid;
   gap: 16px;
 }
 
 .hero-pills,
 .button-row,
-.timeline-strip {
+.timeline-strip,
+.pill-row {
   display: flex;
   flex-wrap: wrap;
 }
@@ -420,6 +423,50 @@ h4 {
 .compact-panel {
   display: grid;
   gap: 18px;
+}
+
+.metric-inline {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 15px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+}
+
+.notice-banner,
+.clarification-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--panel-muted);
+}
+
+.notice-banner.info {
+  border-color: color-mix(in srgb, var(--accent-2) 28%, var(--line));
+}
+
+.notice-banner.success {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+}
+
+.notice-banner.error {
+  border-color: rgba(255, 110, 110, 0.35);
+  color: #ffb9b9;
+}
+
+.clarification-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flat-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .panel-header {

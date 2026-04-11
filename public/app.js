@@ -76,7 +76,10 @@ const elements = {
   prodTitle: document.getElementById("prod-title"),
   prodProblemStatement: document.getElementById("prod-problem-statement"),
   prodBudget: document.getElementById("prod-budget"),
-  prodFeeBps: document.getElementById("prod-fee-bps"),
+  prodFeePreview: document.getElementById("prod-fee-preview"),
+  prodClarifyMission: document.getElementById("prod-clarify-mission"),
+  prodClarification: document.getElementById("prod-clarification"),
+  prodStatus: document.getElementById("prod-status"),
   prodMissionList: document.getElementById("prod-mission-list"),
   prodDetailTitle: document.getElementById("prod-detail-title"),
   prodDetailStatus: document.getElementById("prod-detail-status"),
@@ -326,6 +329,76 @@ function setTheme(theme) {
   const nextThemeLabel = state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
   elements.themeToggle.setAttribute("aria-label", nextThemeLabel);
   elements.themeToggle.setAttribute("title", nextThemeLabel);
+}
+
+function platformFeeBps() {
+  return state.appConfig?.platformFeeBps ?? 1000;
+}
+
+function showProdStatus(message, tone = "neutral") {
+  if (!elements.prodStatus) {
+    return;
+  }
+
+  elements.prodStatus.textContent = message;
+  elements.prodStatus.classList.remove("hidden", "success", "error", "info");
+  elements.prodStatus.classList.add(tone === "error" ? "error" : tone === "success" ? "success" : "info");
+}
+
+function hideProdStatus() {
+  if (!elements.prodStatus) {
+    return;
+  }
+
+  elements.prodStatus.classList.add("hidden");
+  elements.prodStatus.textContent = "";
+}
+
+function renderClarification(clarification) {
+  if (!elements.prodClarification) {
+    return;
+  }
+
+  if (!clarification) {
+    elements.prodClarification.classList.add("hidden");
+    elements.prodClarification.innerHTML = "";
+    return;
+  }
+
+  const questions = (clarification.clarifyingQuestions || [])
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+  const criteria = (clarification.structuredMission?.successCriteria || [])
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+  const dimensions = (clarification.structuredMission?.evaluationDimensions || [])
+    .map((item) => `<span class="pill muted">${escapeHtml(item)}</span>`)
+    .join("");
+
+  elements.prodClarification.classList.remove("hidden");
+  elements.prodClarification.innerHTML = `
+    <div class="panel-header">
+      <h4>Platform agent intake</h4>
+      <span class="micro-label">Structured clarification</span>
+    </div>
+    <p class="section-copy compact-copy">${escapeHtml(clarification.intakeSummary || "")}</p>
+    <div class="clarification-grid">
+      <div>
+        <strong>Questions the platform agent asks</strong>
+        <ul class="flat-list">${questions}</ul>
+      </div>
+      <div>
+        <strong>Success criteria</strong>
+        <ul class="flat-list">${criteria}</ul>
+      </div>
+    </div>
+    <div class="pill-row">${dimensions}</div>
+    <p class="helper-copy">
+      Proposed economics: ${escapeHtml(clarification.proposedEconomics?.totalBudgetDrops || "-")} drops total,
+      ${escapeHtml(String(clarification.proposedEconomics?.platformFeeBps || platformFeeBps()))} bps platform fee,
+      ${escapeHtml(clarification.proposedEconomics?.contributorPoolDrops || "-")} drops for contributors.
+    </p>
+  `;
 }
 
 function applyAppMode() {
@@ -678,6 +751,9 @@ function renderAll() {
   renderDemoSummary();
   renderProductionMissionList();
   renderProductionSummary();
+  if (elements.prodFeePreview) {
+    elements.prodFeePreview.textContent = `${platformFeeBps() / 100}% of mission budget`;
+  }
 }
 
 async function loadAppState() {
@@ -719,6 +795,23 @@ async function refreshMissions() {
     state.selectedMissionId = missions[0].id;
   }
   renderAll();
+}
+
+async function clarifyProductionMission() {
+  const companyWallet = elements.prodCompanyWallet.value.trim() || state.health?.companyAddress || "";
+  const result = await api("/missions/intake/clarify", {
+    method: "POST",
+    body: JSON.stringify({
+      title: elements.prodTitle.value.trim(),
+      problemStatement: elements.prodProblemStatement.value.trim(),
+      budgetDrops: elements.prodBudget.value.trim(),
+      companyWallet
+    })
+  });
+
+  renderClarification(result.clarification);
+  showProdStatus("Platform agent clarification completed. Review the structured mission framing below.", "info");
+  return result;
 }
 
 async function ensureContributionWallets() {
@@ -792,6 +885,28 @@ async function createMission(inputOverrides = {}) {
     );
   }
 
+  return mission;
+}
+
+async function createProductionMission() {
+  const companyWallet = elements.prodCompanyWallet.value.trim() || state.health?.companyAddress || "";
+  const result = await api("/missions/intake", {
+    method: "POST",
+    body: JSON.stringify({
+      title: elements.prodTitle.value.trim(),
+      problemStatement: elements.prodProblemStatement.value.trim(),
+      budgetDrops: elements.prodBudget.value.trim(),
+      companyWallet
+    })
+  });
+
+  const { mission, clarification } = result;
+  state.selectedMissionId = mission.id;
+  state.missions.unshift(mission);
+  renderClarification(clarification);
+  showProdStatus("Mission draft created successfully. The platform fee was applied automatically.", "success");
+  renderAll();
+  await refreshSelectedMission();
   return mission;
 }
 
@@ -1008,6 +1123,7 @@ function attachListeners() {
 
   document.getElementById("prod-save-api-key")?.addEventListener("click", () => {
     saveApiKeyFrom(elements.prodApiKeyInput);
+    showProdStatus("Operator API key saved locally for escrow and settlement actions.", "info");
   });
 
   document.getElementById("prod-generate-api-key")?.addEventListener("click", () => {
@@ -1088,20 +1204,23 @@ function attachListeners() {
     }
   });
 
+  elements.prodClarifyMission?.addEventListener("click", async () => {
+    try {
+      await clarifyProductionMission();
+    } catch (error) {
+      showProdStatus(error.message, "error");
+    }
+  });
+
   document.getElementById("prod-create-mission")?.addEventListener("click", async () => {
     try {
-      const mission = await createMission({
-        title: elements.prodTitle.value.trim(),
-        problemStatement: elements.prodProblemStatement.value.trim(),
-        budgetDrops: elements.prodBudget.value.trim(),
-        feeBps: Number(elements.prodFeeBps.value),
-        companyWallet: elements.prodCompanyWallet.value.trim()
-      });
+      hideProdStatus();
+      const mission = await createProductionMission();
       state.selectedMissionId = mission.id;
       await refreshSelectedMission();
       renderProductionMissionList();
     } catch (error) {
-      window.alert(error.message);
+      showProdStatus(error.message, "error");
     }
   });
 
@@ -1109,8 +1228,14 @@ function attachListeners() {
     try {
       await fundMission();
       renderProductionMissionList();
+      showProdStatus("Selected mission funded through XRPL escrow.", "success");
     } catch (error) {
-      window.alert(error.message);
+      showProdStatus(
+        error.status === 401
+          ? "Funding is a platform-controlled action. Save the operator admin key first."
+          : error.message,
+        "error"
+      );
     }
   });
 
@@ -1118,8 +1243,9 @@ function attachListeners() {
     try {
       await refreshMissions();
       await refreshSelectedMission();
+      showProdStatus("Mission data refreshed.", "info");
     } catch (error) {
-      window.alert(error.message);
+      showProdStatus(error.message, "error");
     }
   });
 }
@@ -1151,11 +1277,16 @@ async function boot() {
     }
     if (elements.prodCompanyWallet && state.companyWallet) {
       elements.prodCompanyWallet.value = state.companyWallet;
+    } else if (elements.prodCompanyWallet && state.health?.companyAddress) {
+      elements.prodCompanyWallet.value = state.health.companyAddress;
     }
     if (elements.prodWalletHint && state.appConfig?.appMode === "production") {
       elements.prodWalletHint.textContent = state.health?.useMockXrpl
         ? "Use a company wallet for the mission. In local mock mode you can still test quickly."
         : "Use the funded company wallet that should actually lock the escrow budget on XRPL.";
+    }
+    if (elements.prodFeePreview) {
+      elements.prodFeePreview.textContent = `${platformFeeBps() / 100}% of mission budget`;
     }
     if (state.appConfig?.demoSharedApiKey && elements.demoKeyHelper) {
       elements.demoKeyHelper.textContent =

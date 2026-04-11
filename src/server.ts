@@ -93,6 +93,7 @@ async function main(): Promise<void> {
         note:
           "x402 is implemented as a real paid HTTP interaction layer around platform-agent intelligence, while XRPL remains the mission settlement rail."
       },
+      platformFeeBps: config.platformFeeBps,
       xrplExplorerBaseUrl: config.xrplExplorerBaseUrl,
       wallets: {
         companyAddress,

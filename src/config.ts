@@ -37,6 +37,7 @@ export const config = {
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",
   useMockXrpl: parseBoolean(process.env.USE_MOCK_XRPL, false),
   allowDemoWallets: parseBoolean(process.env.ALLOW_DEMO_WALLETS, true),
+  platformFeeBps: parseInteger(process.env.PLATFORM_FEE_BPS, 1000),
   x402Enabled: parseBoolean(process.env.X402_ENABLED, false),
   x402FacilitatorUrl: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
   x402Network: process.env.X402_NETWORK ?? "eip155:84532",
@@ -70,5 +71,9 @@ export function validateConfig(): void {
 
   if (config.x402Enabled && !config.x402PayTo) {
     throw new Error("X402_PAY_TO is required when X402_ENABLED=true");
+  }
+
+  if (!Number.isInteger(config.platformFeeBps) || config.platformFeeBps < 0 || config.platformFeeBps > 10_000) {
+    throw new Error("PLATFORM_FEE_BPS must be an integer between 0 and 10000");
   }
 }
