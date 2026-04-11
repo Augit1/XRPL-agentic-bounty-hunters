@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "XRPL escrow-backed payment protocol MVP for multi-agent mission settlement.",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "demo": "tsx src/scripts/demo.ts",
     "test:settlement": "tsx test/settlement.test.ts"
   },
