@@ -1,4 +1,5 @@
-import xrpl, { Client, Wallet, convertStringToHex } from "xrpl";
+import { Client, Wallet, convertStringToHex } from "xrpl";
+import type { EscrowCancel, EscrowCreate, EscrowFinish, Payment } from "xrpl";
 import { config } from "../config";
 import { EscrowCancelResult, EscrowCreateResult, EscrowFinishResult, PaymentResult } from "../types";
 
@@ -25,7 +26,7 @@ export class XrplService {
       return this.client;
     }
 
-    this.client = new xrpl.Client(config.xrplServer);
+    this.client = new Client(config.xrplServer);
     await this.client.connect();
     return this.client;
   }
@@ -121,7 +122,7 @@ export class XrplService {
 
     const companyWallet = this.loadWallet("company", params.companySeed);
 
-    const tx: xrpl.EscrowCreate = {
+    const tx: EscrowCreate = {
       TransactionType: "EscrowCreate",
       Account: companyWallet.address,
       Destination: params.destination,
@@ -169,7 +170,7 @@ export class XrplService {
     }
 
     const settlementWallet = this.loadWallet("settlement");
-    const tx: xrpl.EscrowFinish = {
+    const tx: EscrowFinish = {
       TransactionType: "EscrowFinish",
       Account: settlementWallet.address,
       Owner: params.owner,
@@ -198,7 +199,7 @@ export class XrplService {
     }
 
     const companyWallet = this.loadWallet("company", params.companySeed);
-    const tx: xrpl.EscrowCancel = {
+    const tx: EscrowCancel = {
       TransactionType: "EscrowCancel",
       Account: companyWallet.address,
       Owner: params.owner,
@@ -234,7 +235,7 @@ export class XrplService {
     const role = params.sourceSeed ? "seed" : params.sourceRole ?? "settlement";
     const wallet = this.loadWallet(role, params.sourceSeed);
 
-    const tx: xrpl.Payment = {
+    const tx: Payment = {
       TransactionType: "Payment",
       Account: wallet.address,
       Destination: params.destination,
