@@ -1,3 +1,31 @@
+const DEMO_CONFIG = {
+  title: "Improve support reply quality",
+  problemStatement:
+    "Improve support reply quality by coordinating multiple useful agent contributions and rewarding only work that materially improves the final answer.",
+  budgetDrops: "1000000",
+  feeBps: 1000,
+  minScoreThreshold: 10,
+  notes: "Reward only the contributions that materially improve the final solution.",
+  contributions: [
+    {
+      contributorId: "agent-a",
+      title: "Improved tone and structure",
+      content: "Proposes a more empathetic and structured support reply template."
+    },
+    {
+      contributorId: "agent-b",
+      title: "Constraint-aware troubleshooting block",
+      content: "Adds a concise troubleshooting segment that reduces back-and-forth."
+    },
+    {
+      contributorId: "agent-c",
+      title: "Low-signal generic answer",
+      content: "Generic support copy with little mission-specific value."
+    }
+  ],
+  scores: [60, 30, 0]
+};
+
 const state = {
   appConfig: null,
   health: null,
@@ -5,58 +33,34 @@ const state = {
   selectedMissionId: null,
   activity: [],
   apiKey: window.localStorage.getItem("adminApiKey") || "",
-  paymentProof: window.localStorage.getItem("paymentProof") || "mock-paid"
+  paymentProof: window.localStorage.getItem("paymentProof") || "mock-paid",
+  companyWallet: "",
+  contributionWallets: [],
+  lastQueryResult: null
 };
 
 const elements = {
-  heroEyebrow: document.getElementById("hero-eyebrow"),
-  heroKicker: document.getElementById("hero-kicker"),
-  heroTitle: document.getElementById("hero-title"),
-  heroCopy: document.getElementById("hero-copy"),
   modePill: document.getElementById("mode-pill"),
+  xrplMode: document.getElementById("xrpl-mode"),
   healthStatus: document.getElementById("health-status"),
   appMode: document.getElementById("app-mode"),
   settlementAddress: document.getElementById("settlement-address"),
   treasuryAddress: document.getElementById("treasury-address"),
-  xrplMode: document.getElementById("xrpl-mode"),
-  missionCount: document.getElementById("mission-count"),
   selectedMissionPill: document.getElementById("selected-mission-pill"),
-  doctrineList: document.getElementById("doctrine-list"),
-  missionForm: document.getElementById("mission-form"),
-  missionList: document.getElementById("mission-list"),
-  selectedMissionEmpty: document.getElementById("selected-mission-empty"),
-  selectedMissionContent: document.getElementById("selected-mission-content"),
-  selectedMissionTitle: document.getElementById("selected-mission-title"),
-  selectedMissionDescription: document.getElementById("selected-mission-description"),
-  selectedStatusPill: document.getElementById("selected-status-pill"),
+  missionJson: document.getElementById("mission-json"),
+  queryJson: document.getElementById("query-json"),
+  activityLog: document.getElementById("activity-log"),
+  humanSummary: document.getElementById("human-summary"),
+  settlementBreakdown: document.getElementById("settlement-breakdown"),
+  transactionList: document.getElementById("transaction-list"),
+  workflowRail: document.getElementById("workflow-rail"),
   metricBudget: document.getElementById("metric-budget"),
   metricFee: document.getElementById("metric-fee"),
   metricContributions: document.getElementById("metric-contributions"),
   metricTransactions: document.getElementById("metric-transactions"),
-  workflowRail: document.getElementById("workflow-rail"),
-  contributionForm: document.getElementById("contribution-form"),
-  contributionList: document.getElementById("contribution-list"),
-  resolveForm: document.getElementById("resolve-form"),
-  scoreInputs: document.getElementById("score-inputs"),
-  fundForm: document.getElementById("fund-form"),
-  settlementBreakdown: document.getElementById("settlement-breakdown"),
-  transactionList: document.getElementById("transaction-list"),
-  queryForm: document.getElementById("query-form"),
-  queryJson: document.getElementById("query-json"),
-  missionJson: document.getElementById("mission-json"),
-  settlementJson: document.getElementById("settlement-json"),
-  activityLog: document.getElementById("activity-log"),
-  companyWallet: document.getElementById("company-wallet"),
   apiKeyInput: document.getElementById("api-key-input"),
   paymentProofInput: document.getElementById("payment-proof-input")
 };
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -82,22 +86,30 @@ async function api(path, options = {}) {
   return body;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function selectedMission() {
   return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
 }
 
-function logActivity(message, data) {
+function logActivity(step, detail, payload) {
   state.activity.unshift({
     at: new Date().toLocaleTimeString(),
-    message,
-    data
+    step,
+    detail,
+    payload
   });
   renderActivity();
 }
 
 function renderActivity() {
   if (!state.activity.length) {
-    elements.activityLog.innerHTML = `<div class="empty-state">No actions yet.</div>`;
+    elements.activityLog.innerHTML = `<div class="empty-state">No protocol events yet. Use the buttons on the left to run the flow.</div>`;
     return;
   }
 
@@ -106,506 +118,419 @@ function renderActivity() {
       (entry) => `
         <article class="activity-entry">
           <time>${entry.at}</time>
-          <div class="activity-copy">${escapeHtml(entry.message)}</div>
-          ${entry.data ? `<pre class="json-panel compact">${escapeHtml(JSON.stringify(entry.data, null, 2))}</pre>` : ""}
+          <strong>${escapeHtml(entry.step)}</strong>
+          <p>${escapeHtml(entry.detail)}</p>
+          ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(JSON.stringify(entry.payload, null, 2))}</pre>` : ""}
         </article>
       `
     )
     .join("");
 }
 
-function renderDoctrine() {
-  elements.doctrineList.innerHTML = (state.appConfig?.doctrine || [])
-    .map((item) => `<div class="doctrine-chip">${escapeHtml(item)}</div>`)
-    .join("");
-}
-
-function renderAppMode() {
-  const isDemo = state.appConfig?.appMode === "demo";
-  document.body.dataset.appMode = state.appConfig?.appMode || "production";
-  elements.heroEyebrow.textContent = isDemo ? "Proof of Contribution Demo" : "Proof of Contribution";
-  elements.heroKicker.textContent = state.appConfig?.tagline || "";
-  elements.heroTitle.textContent = isDemo
-    ? "Show the full XRPL mission workflow in one crisp live narrative."
-    : "A clean operating surface for escrow-backed AI coordination.";
-  elements.heroCopy.textContent = isDemo
-    ? "Use the canonical mission, fund it with XRPL escrow, score multiple agent contributions, and settle payouts live with transaction visibility."
-    : "Run missions like a real protocol operator: fund escrow, manage contribution flows, price intelligence access with x402-compatible endpoints, and settle value to the contributors that actually moved the solution forward.";
-  elements.modePill.textContent = isDemo ? "Demo mode" : "Production mode";
-}
-
 function renderHealth() {
   if (!state.health) return;
+  elements.modePill.textContent = state.appConfig?.appMode === "demo" ? "Demo mode" : "Production mode";
+  elements.xrplMode.textContent = state.health.useMockXrpl ? "Mock XRPL" : "Real XRPL";
   elements.healthStatus.textContent = state.health.ok ? "Live" : "Offline";
   elements.appMode.textContent = state.health.appMode;
-  elements.xrplMode.textContent = state.health.useMockXrpl ? "Mock XRPL" : "Real XRPL";
   elements.settlementAddress.textContent = state.health.settlementAddress;
   elements.treasuryAddress.textContent = state.health.treasuryAddress;
-
-  const companyButton = document.getElementById("generate-company-wallet");
-  const contributorButton = document.getElementById("generate-contributor-wallet");
-  companyButton.style.display = state.health.allowDemoWallets ? "" : "none";
-  contributorButton.style.display = state.health.allowDemoWallets ? "" : "none";
 }
 
-function buildSettlementPreview(mission) {
-  if (!mission.resolution) {
-    return {
-      message: "Resolve the mission to compute normalized contribution weights and payout allocation."
-    };
-  }
-
-  return {
-    platformFeeDrops: mission.resolution.platformFeeDrops,
-    contributorPoolDrops: mission.resolution.contributorPoolDrops,
-    minScoreThreshold: mission.resolution.minScoreThreshold,
-    totalQualifiedWeight: mission.resolution.totalQualifiedWeight,
-    payouts: mission.contributions.map((contribution) => ({
-      contributorId: contribution.contributorId,
-      score: contribution.score ?? 0,
-      qualifies: contribution.qualifies ?? false,
-      normalizedWeight: contribution.normalizedWeight ?? 0,
-      payoutDrops: contribution.payoutDrops ?? "0"
-    })),
-    settlementTransactions: mission.settlementTransactions || []
-  };
-}
-
-function renderMissionList() {
-  elements.missionCount.textContent = String(state.missions.length);
-
-  if (!state.missions.length) {
-    elements.missionList.innerHTML = `<div class="empty-state">No missions yet. Load the canonical demo or create one manually.</div>`;
-    return;
-  }
-
-  elements.missionList.innerHTML = state.missions
-    .map((mission) => {
-      const isActive = mission.id === state.selectedMissionId;
-      return `
-        <button class="mission-card ${isActive ? "active" : ""}" data-mission-id="${mission.id}" type="button">
-          <div class="mission-card-top">
-            <strong>${escapeHtml(mission.title)}</strong>
-            <span class="mini-status">${escapeHtml(mission.status)}</span>
-          </div>
-          <p>${escapeHtml(mission.problemStatement)}</p>
-          <div class="mission-meta">
-            <span>${mission.budgetDrops} drops</span>
-            <span>${mission.feeBps} bps fee</span>
-            <span>${mission.contributions.length} contributions</span>
-          </div>
-        </button>
-      `;
-    })
-    .join("");
-
-  for (const button of elements.missionList.querySelectorAll("[data-mission-id]")) {
-    button.addEventListener("click", async () => {
-      state.selectedMissionId = button.dataset.missionId;
-      await refreshSelectedMission();
-    });
-  }
-}
-
-function workflowSteps(mission) {
-  return [
-    { label: "Draft", active: true, done: true },
+function renderWorkflow() {
+  const mission = selectedMission();
+  const steps = [
     {
-      label: "Escrow funded",
-      active: ["funded", "open", "resolved", "paid"].includes(mission.status),
-      done: ["open", "resolved", "paid"].includes(mission.status)
+      label: "Mission structured",
+      active: Boolean(mission),
+      done: Boolean(mission)
     },
     {
-      label: "Contributions submitted",
-      active: mission.contributions.length > 0,
-      done: mission.contributions.length > 0
+      label: "Budget locked",
+      active: mission ? ["funded", "open", "resolved", "paid"].includes(mission.status) : false,
+      done: mission ? ["open", "resolved", "paid"].includes(mission.status) : false
     },
     {
-      label: "Mission resolved",
-      active: ["resolved", "paid"].includes(mission.status),
-      done: ["paid"].includes(mission.status)
+      label: "Contributions stored",
+      active: mission ? mission.contributions.length > 0 : false,
+      done: mission ? mission.contributions.length > 0 : false
+    },
+    {
+      label: "Weights assigned",
+      active: mission ? ["resolved", "paid"].includes(mission.status) : false,
+      done: mission ? mission.status === "paid" : false
     },
     {
       label: "Settlement complete",
-      active: mission.status === "paid",
-      done: mission.status === "paid"
+      active: mission ? mission.status === "paid" : false,
+      done: mission ? mission.status === "paid" : false
     }
   ];
-}
 
-function renderWorkflow(mission) {
-  elements.workflowRail.innerHTML = workflowSteps(mission)
+  elements.workflowRail.innerHTML = steps
     .map(
       (step) => `
         <div class="workflow-step ${step.active ? "active" : ""} ${step.done ? "done" : ""}">
           <span class="workflow-dot"></span>
-          <div>
-            <strong>${escapeHtml(step.label)}</strong>
-          </div>
+          <span>${escapeHtml(step.label)}</span>
         </div>
       `
     )
     .join("");
 }
 
-function renderContributions(mission) {
-  if (!mission.contributions.length) {
-    elements.contributionList.innerHTML = `<div class="empty-state">No contributions yet. Add a few agents to start the mission graph.</div>`;
-    return;
-  }
-
-  elements.contributionList.innerHTML = mission.contributions
-    .map(
-      (contribution) => `
-        <div class="data-card">
-          <div class="data-card-top">
-            <strong>${escapeHtml(contribution.title || contribution.contributorId)}</strong>
-            <span class="mini-status ${contribution.qualifies ? "positive" : ""}">
-              ${contribution.qualifies === undefined ? "pending" : contribution.qualifies ? "qualified" : "zeroed"}
-            </span>
-          </div>
-          <p>${escapeHtml(contribution.content)}</p>
-          <div class="data-meta">
-            <span>${escapeHtml(contribution.contributorId)}</span>
-            <span>score: ${contribution.score ?? "-"}</span>
-            <span>payout: ${contribution.payoutDrops ?? "-"}</span>
-          </div>
-        </div>
-      `
-    )
-    .join("");
-}
-
-function renderScoreInputs(mission) {
-  if (!mission.contributions.length) {
-    elements.scoreInputs.innerHTML = `<div class="empty-state">Add contributions to unlock the evaluation matrix.</div>`;
-    return;
-  }
-
-  elements.scoreInputs.innerHTML = mission.contributions
-    .map(
-      (contribution, index) => `
-        <label class="score-card">
-          <span>${escapeHtml(contribution.contributorId)}</span>
-          <input
-            type="number"
-            min="0"
-            value="${contribution.score ?? (index === 0 ? 60 : index === 1 ? 30 : 0)}"
-            data-contribution-id="${contribution.id}"
-            required
-          />
-        </label>
-      `
-    )
-    .join("");
-}
-
-function renderSettlementBreakdown(mission) {
-  const preview = buildSettlementPreview(mission);
-  if (!mission.resolution) {
-    elements.settlementBreakdown.innerHTML = `<div class="empty-state">Resolution data will populate the payout telemetry once scoring is complete.</div>`;
-    return;
-  }
-
-  elements.settlementBreakdown.innerHTML = `
-    <div class="telemetry-card">
-      <span class="metric-label">Platform fee</span>
-      <strong>${preview.platformFeeDrops}</strong>
-    </div>
-    <div class="telemetry-card">
-      <span class="metric-label">Contributor pool</span>
-      <strong>${preview.contributorPoolDrops}</strong>
-    </div>
-    <div class="telemetry-card">
-      <span class="metric-label">Qualified weight</span>
-      <strong>${preview.totalQualifiedWeight}</strong>
-    </div>
-    <div class="telemetry-card">
-      <span class="metric-label">Min threshold</span>
-      <strong>${preview.minScoreThreshold}</strong>
-    </div>
-  `;
-}
-
-function renderTransactions(mission) {
-  if (!mission.settlementTransactions?.length) {
-    elements.transactionList.innerHTML = `<div class="empty-state">No settlement transactions yet. Finish the mission to populate the ledger trail.</div>`;
-    return;
-  }
-
-  elements.transactionList.innerHTML = mission.settlementTransactions
-    .map(
-      (transaction) => `
-        <div class="data-card">
-          <div class="data-card-top">
-            <strong>${escapeHtml(transaction.kind)}</strong>
-            <span class="mini-status positive">${escapeHtml(transaction.amountDrops || "recorded")}</span>
-          </div>
-          <div class="data-meta">
-            <span>${escapeHtml(transaction.txHash)}</span>
-            <span>${escapeHtml(transaction.destinationWallet || "protocol step")}</span>
-          </div>
-        </div>
-      `
-    )
-    .join("");
-}
-
-function renderSelectedMission() {
+function renderSummary() {
   const mission = selectedMission();
+  elements.selectedMissionPill.textContent = mission ? mission.status : "No mission";
+  elements.metricBudget.textContent = mission ? `${mission.budgetDrops} drops` : "-";
+  elements.metricFee.textContent = mission ? `${mission.feeBps} bps` : "-";
+  elements.metricContributions.textContent = mission ? String(mission.contributions.length) : "-";
+  elements.metricTransactions.textContent = mission ? String(mission.settlementTransactions?.length || 0) : "-";
+  elements.missionJson.textContent = mission ? JSON.stringify(mission, null, 2) : "";
 
   if (!mission) {
-    elements.selectedMissionEmpty.classList.remove("hidden");
-    elements.selectedMissionContent.classList.add("hidden");
-    elements.selectedMissionPill.textContent = "None selected";
-    renderMissionList();
+    elements.humanSummary.innerHTML = `<div class="empty-state">No mission yet. Start with “Generate company wallet” and “Create structured mission”.</div>`;
+    elements.settlementBreakdown.innerHTML = `<div class="empty-state">Settlement numbers will appear after resolution.</div>`;
+    elements.transactionList.innerHTML = `<div class="empty-state">Transaction hashes will appear after funding and settlement.</div>`;
+    renderWorkflow();
     return;
   }
 
-  elements.selectedMissionEmpty.classList.add("hidden");
-  elements.selectedMissionContent.classList.remove("hidden");
-  elements.selectedMissionPill.textContent = mission.status;
-  elements.selectedMissionTitle.textContent = mission.title;
-  elements.selectedMissionDescription.textContent = mission.problemStatement;
-  elements.selectedStatusPill.textContent = mission.status;
-  elements.metricBudget.textContent = `${mission.budgetDrops} drops`;
-  elements.metricFee.textContent = `${mission.feeBps} bps`;
-  elements.metricContributions.textContent = String(mission.contributions.length);
-  elements.metricTransactions.textContent = String(mission.settlementTransactions?.length || 0);
-  elements.missionJson.textContent = JSON.stringify(mission, null, 2);
-  elements.settlementJson.textContent = JSON.stringify(buildSettlementPreview(mission), null, 2);
+  elements.humanSummary.innerHTML = `
+    <div class="summary-card">
+      <strong>${escapeHtml(mission.title)}</strong>
+      <p>${escapeHtml(mission.problemStatement)}</p>
+      <div class="summary-meta">
+        <span>Status: ${escapeHtml(mission.status)}</span>
+        <span>Contributions: ${mission.contributions.length}</span>
+      </div>
+    </div>
+  `;
 
-  renderWorkflow(mission);
-  renderContributions(mission);
-  renderScoreInputs(mission);
-  renderSettlementBreakdown(mission);
-  renderTransactions(mission);
-  renderMissionList();
+  if (mission.resolution) {
+    elements.settlementBreakdown.innerHTML = `
+      <div class="summary-card">
+        <div class="summary-meta">
+          <span>Platform fee: ${mission.resolution.platformFeeDrops}</span>
+          <span>Contributor pool: ${mission.resolution.contributorPoolDrops}</span>
+          <span>Threshold: ${mission.resolution.minScoreThreshold}</span>
+        </div>
+      </div>
+      ${mission.contributions
+        .map(
+          (contribution) => `
+            <div class="summary-row">
+              <span>${escapeHtml(contribution.contributorId)}</span>
+              <span>score ${contribution.score ?? 0}</span>
+              <span>${contribution.payoutDrops ?? "0"} drops</span>
+            </div>
+          `
+        )
+        .join("")}
+    `;
+  } else {
+    elements.settlementBreakdown.innerHTML = `<div class="empty-state">Resolve the mission to compute payout weights and split.</div>`;
+  }
+
+  if (mission.settlementTransactions?.length) {
+    elements.transactionList.innerHTML = mission.settlementTransactions
+      .map(
+        (transaction) => `
+          <div class="summary-row">
+            <span>${escapeHtml(transaction.kind)}</span>
+            <span>${escapeHtml(transaction.amountDrops || "-")}</span>
+            <span>${escapeHtml(transaction.txHash)}</span>
+          </div>
+        `
+      )
+      .join("");
+  } else {
+    elements.transactionList.innerHTML = `<div class="empty-state">No transaction trail yet.</div>`;
+  }
+
+  renderWorkflow();
 }
 
-async function loadAppConfig() {
+async function loadAppState() {
   state.appConfig = await api("/app-config");
-  renderDoctrine();
-  renderAppMode();
-}
-
-async function loadHealth() {
   state.health = await api("/health");
-  renderHealth();
-  renderAppMode();
-}
-
-async function loadMissions() {
   const { missions } = await api("/missions");
   state.missions = missions;
   if (!state.selectedMissionId && missions.length) {
     state.selectedMissionId = missions[0].id;
   }
-  if (state.selectedMissionId && !missions.find((mission) => mission.id === state.selectedMissionId)) {
-    state.selectedMissionId = missions[0]?.id || null;
-  }
-  renderSelectedMission();
+  renderHealth();
+  renderSummary();
 }
 
 async function refreshSelectedMission() {
   if (!state.selectedMissionId) {
-    renderSelectedMission();
+    renderSummary();
     return;
   }
 
   const { mission } = await api(`/missions/${state.selectedMissionId}`);
   const index = state.missions.findIndex((item) => item.id === mission.id);
-  if (index >= 0) state.missions[index] = mission;
-  else state.missions.unshift(mission);
-  renderSelectedMission();
+  if (index >= 0) {
+    state.missions[index] = mission;
+  } else {
+    state.missions.unshift(mission);
+  }
+  renderSummary();
 }
 
-async function generateWallet(targetInput) {
+async function ensureContributionWallets() {
+  while (state.contributionWallets.length < DEMO_CONFIG.contributions.length) {
+    const wallet = await api("/wallets/demo", { method: "POST", body: "{}" });
+    state.contributionWallets.push(wallet.address);
+  }
+}
+
+async function generateCompanyWallet() {
   const wallet = await api("/wallets/demo", { method: "POST", body: "{}" });
-  targetInput.value = wallet.address;
-  logActivity("Generated XRPL wallet", wallet);
+  state.companyWallet = wallet.address;
+  logActivity("1. Company wallet generated", "Created XRPL wallet for the company funding side.", wallet);
 }
 
-function loadDemoScenario() {
-  elements.missionForm.elements.title.value = "Improve support reply quality";
-  elements.missionForm.elements.problemStatement.value =
-    "Improve support reply quality by coordinating multiple useful agent contributions and rewarding only work that materially improves the final answer.";
-  elements.missionForm.elements.budgetDrops.value = "1000000";
-  elements.missionForm.elements.feeBps.value = "1000";
-  elements.resolveForm.elements.minScoreThreshold.value = "10";
-  elements.resolveForm.elements.notes.value = "Reward only the contributions that materially improve the final solution.";
-  logActivity("Loaded canonical whitepaper demo scenario");
-}
+async function createMission() {
+  if (!state.companyWallet) {
+    await generateCompanyWallet();
+  }
 
-function loadDemoScores() {
-  const mission = selectedMission();
-  if (!mission) return;
-  mission.contributions.forEach((contribution, index) => {
-    const input = elements.resolveForm.querySelector(`[data-contribution-id="${contribution.id}"]`);
-    if (input) {
-      input.value = String(index === 0 ? 60 : index === 1 ? 30 : 0);
-    }
+  const { mission } = await api("/missions", {
+    method: "POST",
+    body: JSON.stringify({
+      title: DEMO_CONFIG.title,
+      problemStatement: DEMO_CONFIG.problemStatement,
+      budgetDrops: DEMO_CONFIG.budgetDrops,
+      feeBps: DEMO_CONFIG.feeBps,
+      companyWallet: state.companyWallet
+    })
   });
-  logActivity("Loaded canonical evaluator weights (60 / 30 / 0)");
+
+  state.selectedMissionId = mission.id;
+  state.missions.unshift(mission);
+  logActivity(
+    "2. Structured mission created",
+    "Platform-side mission structure is ready with budget cap, fee, and problem context.",
+    mission
+  );
+  renderSummary();
 }
 
-elements.missionForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = new FormData(elements.missionForm);
-  try {
-    const { mission } = await api("/missions", {
-      method: "POST",
-      body: JSON.stringify({
-        title: form.get("title"),
-        problemStatement: form.get("problemStatement"),
-        budgetDrops: form.get("budgetDrops"),
-        feeBps: Number(form.get("feeBps")),
-        companyWallet: form.get("companyWallet")
-      })
-    });
-    state.selectedMissionId = mission.id;
-    logActivity("Created mission", mission);
-    await loadMissions();
-  } catch (error) {
-    logActivity("Mission creation failed", { error: error.message });
-  }
-});
-
-elements.fundForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!state.selectedMissionId) return;
-  const form = new FormData(elements.fundForm);
-  try {
-    const result = await api(`/missions/${state.selectedMissionId}/fund`, {
-      method: "POST",
-      body: JSON.stringify({
-        finishAfterSeconds: Number(form.get("finishAfterSeconds")),
-        cancelAfterSeconds: Number(form.get("cancelAfterSeconds"))
-      })
-    });
-    logActivity("Locked budget in XRPL escrow", result);
-    await refreshSelectedMission();
-  } catch (error) {
-    logActivity("Funding failed", { error: error.message });
-  }
-});
-
-elements.contributionForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!state.selectedMissionId) return;
-  const form = new FormData(elements.contributionForm);
-  try {
-    const result = await api(`/missions/${state.selectedMissionId}/contributions`, {
-      method: "POST",
-      body: JSON.stringify({
-        contributorId: form.get("contributorId"),
-        contributorWallet: form.get("contributorWallet"),
-        title: form.get("title"),
-        content: form.get("content")
-      })
-    });
-    logActivity("Saved contribution", result);
-    elements.contributionForm.reset();
-    await refreshSelectedMission();
-  } catch (error) {
-    logActivity("Contribution failed", { error: error.message });
-  }
-});
-
-elements.resolveForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function fundMission() {
   const mission = selectedMission();
-  if (!mission) return;
-  const form = new FormData(elements.resolveForm);
-  try {
-    const result = await api(`/missions/${mission.id}/resolve`, {
+  if (!mission) {
+    throw new Error("Create a mission before funding it.");
+  }
+
+  const result = await api(`/missions/${mission.id}/fund`, {
+    method: "POST",
+    body: JSON.stringify({
+      finishAfterSeconds: 10,
+      cancelAfterSeconds: 600
+    })
+  });
+
+  logActivity(
+    "3. Budget locked in XRPL escrow",
+    "Company wallet reserved the mission budget to the platform settlement wallet using EscrowCreate.",
+    result
+  );
+  await refreshSelectedMission();
+}
+
+async function queryPlatformAgent() {
+  const mission = selectedMission();
+  if (!mission) {
+    throw new Error("Create a mission before querying the platform agent.");
+  }
+
+  const result = await api(`/missions/${mission.id}/query-agent`, {
+    method: "POST",
+    body: JSON.stringify({
+      question: "What kind of contribution creates the strongest marginal improvement?"
+    }),
+    usePaymentProof: true
+  });
+
+  state.lastQueryResult = result;
+  elements.queryJson.textContent = JSON.stringify(result, null, 2);
+  logActivity(
+    "4. Agent queried platform intelligence via x402",
+    "Paid context access returned structured hints about how to maximize useful contribution.",
+    result
+  );
+}
+
+async function addContributions() {
+  const mission = selectedMission();
+  if (!mission) {
+    throw new Error("Create and fund a mission before adding contributions.");
+  }
+
+  await ensureContributionWallets();
+
+  for (let index = 0; index < DEMO_CONFIG.contributions.length; index += 1) {
+    const contribution = DEMO_CONFIG.contributions[index];
+    const result = await api(`/missions/${mission.id}/contributions`, {
       method: "POST",
       body: JSON.stringify({
-        minScoreThreshold: Number(form.get("minScoreThreshold")),
-        notes: form.get("notes"),
-        scores: mission.contributions.map((contribution) => ({
-          contributionId: contribution.id,
-          score: Number(elements.resolveForm.querySelector(`[data-contribution-id="${contribution.id}"]`).value)
-        }))
+        contributorId: contribution.contributorId,
+        contributorWallet: state.contributionWallets[index],
+        title: contribution.title,
+        content: contribution.content
       })
     });
-    logActivity("Resolved mission with Proof of Contribution scoring", result.plan);
-    await refreshSelectedMission();
-  } catch (error) {
-    logActivity("Resolution failed", { error: error.message });
-  }
-});
 
-document.getElementById("settle-button").addEventListener("click", async () => {
-  if (!state.selectedMissionId) return;
-  try {
-    const result = await api(`/missions/${state.selectedMissionId}/settle`, {
-      method: "POST",
-      body: JSON.stringify({})
-    });
-    logActivity("Settled mission on XRPL", result);
-    await refreshSelectedMission();
-  } catch (error) {
-    logActivity("Settlement failed", { error: error.message });
+    logActivity(
+      `5.${index + 1} Contribution stored`,
+      `${contribution.contributorId} submitted a solution brick and the platform linked it to a wallet identity.`,
+      result.contribution
+    );
   }
-});
 
-document.getElementById("cancel-button").addEventListener("click", async () => {
-  if (!state.selectedMissionId) return;
-  try {
-    const result = await api(`/missions/${state.selectedMissionId}/cancel`, {
-      method: "POST",
-      body: JSON.stringify({})
-    });
-    logActivity("Canceled mission escrow", result);
-    await refreshSelectedMission();
-  } catch (error) {
-    logActivity("Cancel failed", { error: error.message });
-  }
-});
+  await refreshSelectedMission();
+}
 
-elements.queryForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function resolveMission() {
   const mission = selectedMission();
-  if (!mission) return;
-  const form = new FormData(elements.queryForm);
-  try {
-    const result = await api(`/missions/${mission.id}/query-agent`, {
-      method: "POST",
-      body: JSON.stringify({ question: form.get("question") }),
-      usePaymentProof: true
-    });
-    elements.queryJson.textContent = JSON.stringify(result, null, 2);
-    logActivity("Queried paid platform intelligence", result);
-  } catch (error) {
-    elements.queryJson.textContent = JSON.stringify(error.body || { error: error.message }, null, 2);
-    logActivity(error.status === 402 ? "x402 payment required for intelligence access" : "Query failed", error.body || { error: error.message });
+  if (!mission) {
+    throw new Error("Create, fund, and populate a mission before resolving it.");
   }
-});
 
-document.getElementById("premium-context-button").addEventListener("click", async () => {
+  if (mission.contributions.length < 3) {
+    throw new Error("Need the three demo contributions before resolving the mission.");
+  }
+
+  const result = await api(`/missions/${mission.id}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({
+      minScoreThreshold: DEMO_CONFIG.minScoreThreshold,
+      notes: DEMO_CONFIG.notes,
+      scores: mission.contributions.map((contribution, index) => ({
+        contributionId: contribution.id,
+        score: DEMO_CONFIG.scores[index] ?? 0
+      }))
+    })
+  });
+
+  elements.queryJson.textContent = JSON.stringify(result.plan, null, 2);
+  logActivity(
+    "6. Contribution weights assigned",
+    "Platform evaluation scored usefulness, zeroed low-value work, and computed the settlement plan.",
+    result.plan
+  );
+  await refreshSelectedMission();
+}
+
+async function settleMission() {
   const mission = selectedMission();
-  if (!mission) return;
+  if (!mission) {
+    throw new Error("Resolve a mission before settling it.");
+  }
+
+  const result = await api(`/missions/${mission.id}/settle`, {
+    method: "POST",
+    body: JSON.stringify({})
+  });
+
+  logActivity(
+    "7. Mission settled on XRPL",
+    "Escrow was finished, contributor payments were executed, and the fee was routed to treasury.",
+    result
+  );
+  await refreshSelectedMission();
+}
+
+async function runDemo() {
   try {
-    const result = await api(`/missions/${mission.id}/premium-context`, {
-      method: "GET",
-      usePaymentProof: true
-    });
-    elements.queryJson.textContent = JSON.stringify(result, null, 2);
-    logActivity("Fetched premium mission context", result);
+    await generateCompanyWallet();
+    await createMission();
+    await fundMission();
+    await queryPlatformAgent();
+    await addContributions();
+    await resolveMission();
+    await settleMission();
+    logActivity("Demo complete", "The full Proof of Contribution flow executed successfully.");
   } catch (error) {
-    elements.queryJson.textContent = JSON.stringify(error.body || { error: error.message }, null, 2);
-    logActivity(error.status === 402 ? "x402 payment required for premium context" : "Premium context failed", error.body || { error: error.message });
+    logActivity("Demo failed", error.message, error.body || undefined);
+  }
+}
+
+document.getElementById("save-api-key").addEventListener("click", () => {
+  state.apiKey = elements.apiKeyInput.value.trim();
+  state.paymentProof = elements.paymentProofInput.value.trim();
+  window.localStorage.setItem("adminApiKey", state.apiKey);
+  window.localStorage.setItem("paymentProof", state.paymentProof);
+  logActivity("Credentials saved", "Stored admin key and x402 proof locally in the browser.");
+});
+
+document.getElementById("load-demo-scenario").addEventListener("click", () => {
+  logActivity(
+    "Canonical scenario loaded",
+    "Mission: Improve support reply quality. Budget: 1,000,000 drops. Fee: 10%. Scores: 60 / 30 / 0."
+  );
+});
+
+document.getElementById("generate-company-wallet").addEventListener("click", async () => {
+  try {
+    await generateCompanyWallet();
+  } catch (error) {
+    logActivity("Wallet generation failed", error.message, error.body || undefined);
   }
 });
 
-document.getElementById("refresh-missions").addEventListener("click", async () => {
+document.getElementById("create-mission-button").addEventListener("click", async () => {
   try {
-    await loadMissions();
-    logActivity("Refreshed mission rail");
+    await createMission();
   } catch (error) {
-    logActivity("Refresh failed", { error: error.message });
+    logActivity("Mission creation failed", error.message, error.body || undefined);
   }
+});
+
+document.getElementById("fund-mission-button").addEventListener("click", async () => {
+  try {
+    await fundMission();
+  } catch (error) {
+    logActivity("Funding failed", error.message, error.body || undefined);
+  }
+});
+
+document.getElementById("query-agent-button").addEventListener("click", async () => {
+  try {
+    await queryPlatformAgent();
+  } catch (error) {
+    logActivity("x402 query failed", error.message, error.body || undefined);
+  }
+});
+
+document.getElementById("add-contributions-button").addEventListener("click", async () => {
+  try {
+    await addContributions();
+  } catch (error) {
+    logActivity("Contribution submission failed", error.message, error.body || undefined);
+  }
+});
+
+document.getElementById("resolve-mission-button").addEventListener("click", async () => {
+  try {
+    await resolveMission();
+  } catch (error) {
+    logActivity("Resolution failed", error.message, error.body || undefined);
+  }
+});
+
+document.getElementById("settle-mission-button").addEventListener("click", async () => {
+  try {
+    await settleMission();
+  } catch (error) {
+    logActivity("Settlement failed", error.message, error.body || undefined);
+  }
+});
+
+document.getElementById("run-demo-button").addEventListener("click", async () => {
+  await runDemo();
 });
 
 document.getElementById("clear-log").addEventListener("click", () => {
@@ -613,51 +538,19 @@ document.getElementById("clear-log").addEventListener("click", () => {
   renderActivity();
 });
 
-document.getElementById("save-api-key").addEventListener("click", () => {
-  state.apiKey = elements.apiKeyInput.value.trim();
-  state.paymentProof = elements.paymentProofInput.value.trim();
-  window.localStorage.setItem("adminApiKey", state.apiKey);
-  window.localStorage.setItem("paymentProof", state.paymentProof);
-  logActivity("Saved local operator credentials");
-});
-
-document.getElementById("generate-company-wallet").addEventListener("click", async () => {
-  try {
-    await generateWallet(elements.companyWallet);
-  } catch (error) {
-    logActivity("Wallet generation failed", { error: error.message });
-  }
-});
-
-document.getElementById("generate-contributor-wallet").addEventListener("click", async () => {
-  try {
-    await generateWallet(elements.contributionForm.querySelector('input[name="contributorWallet"]'));
-  } catch (error) {
-    logActivity("Wallet generation failed", { error: error.message });
-  }
-});
-
-document.getElementById("load-demo-scenario").addEventListener("click", loadDemoScenario);
-document.getElementById("load-demo-scores").addEventListener("click", loadDemoScores);
-
 async function boot() {
-  renderActivity();
   elements.apiKeyInput.value = state.apiKey;
   elements.paymentProofInput.value = state.paymentProof;
+  renderActivity();
 
   try {
-    await loadAppConfig();
-    await loadHealth();
-    await loadMissions();
-    if (state.appConfig?.appMode === "demo") {
-      loadDemoScenario();
-    }
-    logActivity("Interface ready", {
-      appMode: state.appConfig?.appMode,
-      xrplMode: state.health?.useMockXrpl ? "mock" : "real"
-    });
+    await loadAppState();
+    logActivity(
+      "Interface ready",
+      "Button-first demo board loaded. Use the controls on the left to illustrate the protocol step by step."
+    );
   } catch (error) {
-    logActivity("Initial load failed", { error: error.message });
+    logActivity("Initial load failed", error.message, error.body || undefined);
   }
 }
 
