@@ -31,6 +31,7 @@ export const config = {
   xrplExplorerBaseUrl: process.env.XRPL_EXPLORER_BASE_URL ?? "https://testnet.xrpl.org",
   databasePath: path.resolve(cwd, process.env.DATABASE_PATH ?? "./data/app.db"),
   adminApiKey: process.env.ADMIN_API_KEY ?? "",
+  demoSharedApiKey: process.env.DEMO_SHARED_API_KEY ?? "",
   settlementSeed: process.env.XRPL_SETTLEMENT_SEED ?? "",
   treasurySeed: process.env.XRPL_TREASURY_SEED ?? "",
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",

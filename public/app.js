@@ -33,7 +33,7 @@ const state = {
   selectedMissionId: null,
   activity: [],
   apiKey: window.localStorage.getItem("adminApiKey") || "",
-  paymentProof: window.localStorage.getItem("paymentProof") || "mock-paid",
+  paymentProof: "mock-paid",
   companyWallet: "",
   contributionWallets: [],
   lastQueryResult: null
@@ -59,7 +59,7 @@ const elements = {
   metricContributions: document.getElementById("metric-contributions"),
   metricTransactions: document.getElementById("metric-transactions"),
   apiKeyInput: document.getElementById("api-key-input"),
-  paymentProofInput: document.getElementById("payment-proof-input")
+  demoKeyHelper: document.getElementById("demo-key-helper")
 };
 
 async function api(path, options = {}) {
@@ -95,6 +95,12 @@ function escapeHtml(value) {
 
 function selectedMission() {
   return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
+}
+
+function generateRandomKey() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function logActivity(step, detail, payload) {
@@ -253,6 +259,10 @@ function renderSummary() {
 
 async function loadAppState() {
   state.appConfig = await api("/app-config");
+  if (state.appConfig?.demoSharedApiKey && !state.apiKey) {
+    state.apiKey = state.appConfig.demoSharedApiKey;
+    window.localStorage.setItem("adminApiKey", state.apiKey);
+  }
   state.health = await api("/health");
   const { missions } = await api("/missions");
   state.missions = missions;
@@ -460,16 +470,18 @@ async function runDemo() {
 
 document.getElementById("save-api-key").addEventListener("click", () => {
   state.apiKey = elements.apiKeyInput.value.trim();
-  state.paymentProof = elements.paymentProofInput.value.trim();
   window.localStorage.setItem("adminApiKey", state.apiKey);
-  window.localStorage.setItem("paymentProof", state.paymentProof);
-  logActivity("Credentials saved", "Stored admin key and x402 proof locally in the browser.");
+  logActivity("Credentials saved", "Stored admin key locally in the browser.");
 });
 
-document.getElementById("load-demo-scenario").addEventListener("click", () => {
+document.getElementById("generate-api-key").addEventListener("click", () => {
+  const generated = generateRandomKey();
+  elements.apiKeyInput.value = generated;
+  state.apiKey = generated;
+  window.localStorage.setItem("adminApiKey", generated);
   logActivity(
-    "Canonical scenario loaded",
-    "Mission: Improve support reply quality. Budget: 1,000,000 drops. Fee: 10%. Scores: 60 / 30 / 0."
+    "Generated admin key",
+    "Created a random key in the browser. Use this for local or deployment setup, not as a public production secret."
   );
 });
 
@@ -540,11 +552,15 @@ document.getElementById("clear-log").addEventListener("click", () => {
 
 async function boot() {
   elements.apiKeyInput.value = state.apiKey;
-  elements.paymentProofInput.value = state.paymentProof;
   renderActivity();
 
   try {
     await loadAppState();
+    elements.apiKeyInput.value = state.apiKey;
+    if (state.appConfig?.demoSharedApiKey) {
+      elements.demoKeyHelper.textContent =
+        "A shared demo key is preloaded for this site so visitors can test the full workflow. Production should keep keys private.";
+    }
     logActivity(
       "Interface ready",
       "Button-first demo board loaded. Use the controls on the left to illustrate the protocol step by step."

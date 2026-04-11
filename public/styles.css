@@ -105,6 +105,7 @@ h1 {
 .hero-text,
 .schema-card p,
 .control-block p,
+.helper-copy,
 .empty-state,
 .summary-card p,
 .activity-entry p {
@@ -113,7 +114,8 @@ h1 {
 }
 
 .hero-pills,
-.button-stack {
+.button-stack,
+.scenario-strip {
   display: grid;
   gap: 10px;
 }
@@ -121,6 +123,11 @@ h1 {
 .hero-pills {
   display: flex;
   flex-wrap: wrap;
+}
+
+.scenario-strip {
+  margin-top: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .pill {
@@ -206,6 +213,10 @@ h1 {
   background: var(--panel-soft);
   border: 1px solid var(--line);
   margin-bottom: 14px;
+}
+
+.compact-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .status-grid {
@@ -316,7 +327,9 @@ h1 {
   .workspace-columns,
   .schema-grid,
   .status-grid,
-  .workflow-rail {
+  .workflow-rail,
+  .scenario-strip,
+  .compact-stack {
     grid-template-columns: 1fr;
   }
 }

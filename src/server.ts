@@ -86,7 +86,8 @@ async function main(): Promise<void> {
         enabled: true,
         contextFeeDrops: config.x402ContextFeeDrops,
         note: "x402 is implemented as a forward-compatible HTTP payment negotiation layer around paid intelligence access."
-      }
+      },
+      demoSharedApiKey: config.appMode === "demo" ? config.demoSharedApiKey || null : null
     });
   });
 

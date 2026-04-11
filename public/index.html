@@ -47,7 +47,7 @@
       <section class="panel protocol-panel">
         <div class="panel-header">
           <h2>Protocol Schema</h2>
-          <button id="load-demo-scenario" type="button" class="secondary-button">Load canonical demo</button>
+          <span class="pill muted">Preset scenario</span>
         </div>
         <div class="schema-grid">
           <article class="schema-card">
@@ -67,6 +67,12 @@
             <p>Finish escrow, send payouts, route the fee to treasury, and publish the outcome trail.</p>
           </article>
         </div>
+        <div class="scenario-strip">
+          <span>Improve support reply quality</span>
+          <span>Budget 1,000,000 drops</span>
+          <span>Fee 10%</span>
+          <span>Scores 60 / 30 / 0</span>
+        </div>
       </section>
 
       <section class="demo-grid">
@@ -81,11 +87,13 @@
               Admin API key
               <input id="api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
             </label>
-            <label>
-              x402 payment proof
-              <input id="payment-proof-input" type="text" value="mock-paid" />
-            </label>
-            <button id="save-api-key" type="button">Save local credentials</button>
+            <div class="button-stack compact-stack">
+              <button id="save-api-key" type="button">Save credentials</button>
+              <button id="generate-api-key" type="button" class="secondary-button">Generate key</button>
+            </div>
+            <p class="helper-copy" id="demo-key-helper">
+              Demo mode can preload a shared key so visitors can test the workflow. Production should keep keys private.
+            </p>
           </div>
 
           <div class="control-block">
