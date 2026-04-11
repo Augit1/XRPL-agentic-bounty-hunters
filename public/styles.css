@@ -213,9 +213,20 @@ h4 {
 .helper-copy,
 .empty-state,
 .list-copy,
-.activity-entry p {
+.activity-entry p,
+.explorer-link {
   color: var(--muted);
   line-height: 1.7;
+}
+
+.explorer-link {
+  color: var(--accent-2);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.explorer-link:hover {
+  text-decoration: underline;
 }
 
 .compact-copy {
@@ -236,7 +247,8 @@ h4 {
 .settlement-breakdown,
 .mission-list,
 .workflow-rail,
-.form-grid {
+.form-grid,
+.explorer-links {
   display: grid;
   gap: 16px;
 }
@@ -446,6 +458,24 @@ h4 {
 
 .helper-copy {
   margin: 0;
+}
+
+.explorer-links {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.explorer-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel-muted);
+  border: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--text);
 }
 
 .data-block {

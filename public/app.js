@@ -199,6 +199,84 @@ function selectedMission() {
   return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
 }
 
+function explorerBaseUrl() {
+  return (
+    state.appConfig?.xrplExplorerBaseUrl ||
+    state.health?.xrplExplorerBaseUrl ||
+    "https://testnet.xrpl.org"
+  );
+}
+
+function isLikelyTxHash(value) {
+  return typeof value === "string" && /^[A-F0-9]{64}$/i.test(value);
+}
+
+function isLikelyXrplAddress(value) {
+  return typeof value === "string" && /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(value);
+}
+
+function transactionExplorerUrl(hash) {
+  return `${explorerBaseUrl()}/transactions/${encodeURIComponent(hash)}`;
+}
+
+function accountExplorerUrl(address) {
+  return `${explorerBaseUrl()}/accounts/${encodeURIComponent(address)}`;
+}
+
+function explorerAnchor(url, label) {
+  return `<a class="explorer-link" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+}
+
+function renderExplorerItems(payload) {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+
+  const items = [];
+  const seen = new Set();
+
+  const collect = (key, value) => {
+    if (typeof value === "string" && isLikelyTxHash(value)) {
+      const token = `tx:${value}`;
+      if (!seen.has(token)) {
+        seen.add(token);
+        items.push(
+          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(transactionExplorerUrl(value), "open in XRPL explorer")}</span>`
+        );
+      }
+      return;
+    }
+
+    if (typeof value === "string" && isLikelyXrplAddress(value)) {
+      const token = `account:${value}`;
+      if (!seen.has(token)) {
+        seen.add(token);
+        items.push(
+          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(accountExplorerUrl(value), "view account")}</span>`
+        );
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry, index) => collect(`${key} ${index + 1}`, entry));
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      Object.entries(value).forEach(([nestedKey, nestedValue]) => collect(nestedKey, nestedValue));
+    }
+  };
+
+  Object.entries(payload).forEach(([key, value]) => collect(key, value));
+
+  if (!items.length) {
+    return "";
+  }
+
+  return `<div class="explorer-links">${items.join("")}</div>`;
+}
+
 function setTheme(theme) {
   state.theme = theme === "light" ? "light" : "dark";
   elements.body.dataset.theme = state.theme;
@@ -266,6 +344,7 @@ function renderDemoActivity() {
           <time>${entry.at}</time>
           <strong>${escapeHtml(entry.step)}</strong>
           <p>${escapeHtml(entry.detail)}</p>
+          ${entry.payload && typeof entry.payload === "object" ? renderExplorerItems(entry.payload) : ""}
           ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(typeof entry.payload === "string" ? entry.payload : JSON.stringify(entry.payload, null, 2))}</pre>` : ""}
         </article>
       `
@@ -283,8 +362,14 @@ function renderHealth() {
   elements.xrplMode.textContent = state.health.useMockXrpl ? "Mock XRPL" : "Real XRPL";
   elements.healthStatus.textContent = state.health.ok ? "Live" : "Offline";
   elements.appMode.textContent = state.health.appMode;
-  elements.settlementAddress.textContent = state.health.settlementAddress;
-  elements.treasuryAddress.textContent = state.health.treasuryAddress;
+  elements.settlementAddress.innerHTML = explorerAnchor(
+    accountExplorerUrl(state.health.settlementAddress),
+    state.health.settlementAddress
+  );
+  elements.treasuryAddress.innerHTML = explorerAnchor(
+    accountExplorerUrl(state.health.treasuryAddress),
+    state.health.treasuryAddress
+  );
 }
 
 function renderWorkflow() {
@@ -393,7 +478,7 @@ function renderDemoSummary() {
           <div class="summary-row">
             <span>${escapeHtml(transaction.kind)}</span>
             <span>${escapeHtml(transaction.amountDrops || "-")}</span>
-            <span>${escapeHtml(transaction.txHash)}</span>
+            <span>${explorerAnchor(transactionExplorerUrl(transaction.txHash), transaction.txHash)}</span>
           </div>
         `
       )
@@ -533,7 +618,7 @@ function renderProductionSummary() {
           <div class="summary-row">
             <span>${escapeHtml(transaction.kind)}</span>
             <span>${escapeHtml(transaction.amountDrops || "-")}</span>
-            <span>${escapeHtml(transaction.txHash)}</span>
+            <span>${explorerAnchor(transactionExplorerUrl(transaction.txHash), transaction.txHash)}</span>
           </div>
         `
       )

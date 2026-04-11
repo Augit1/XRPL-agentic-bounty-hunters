@@ -58,6 +58,7 @@ async function main(): Promise<void> {
       environment: config.nodeEnv,
       appMode: config.appMode,
       xrplServer: config.xrplServer,
+      xrplExplorerBaseUrl: config.xrplExplorerBaseUrl,
       useMockXrpl: config.useMockXrpl,
       allowDemoWallets: config.allowDemoWallets,
       companyAddress,
@@ -90,6 +91,7 @@ async function main(): Promise<void> {
         contextFeeDrops: config.x402ContextFeeDrops,
         note: "x402 is implemented as a forward-compatible HTTP payment negotiation layer around paid intelligence access."
       },
+      xrplExplorerBaseUrl: config.xrplExplorerBaseUrl,
       wallets: {
         companyAddress,
         settlementAddress,
