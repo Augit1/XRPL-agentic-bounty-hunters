@@ -1,0 +1,27 @@
+{
+  "name": "xrpl-agentic-bounty-hunters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "XRPL escrow-backed payment protocol MVP for multi-agent mission settlement.",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "demo": "tsx src/scripts/demo.ts",
+    "test:settlement": "tsx test/settlement.test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "uuid": "^11.0.5",
+    "xrpl": "^4.2.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
