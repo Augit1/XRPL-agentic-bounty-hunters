@@ -38,6 +38,8 @@ const state = {
   apiKey: window.localStorage.getItem(API_KEY_STORAGE_KEY) || "",
   companyWallet: "",
   contributionWallets: [],
+  productionClarification: null,
+  productionClarificationSignature: "",
   lastQueryResult: null,
   theme: window.localStorage.getItem(THEME_STORAGE_KEY) || "dark"
 };
@@ -371,6 +373,26 @@ function setFeePreviewFromBudget() {
   }
 
   elements.prodFeePreview.textContent = feePreviewText(elements.prodBudget.value, platformFeeBps());
+}
+
+function getProductionMissionDraftInput() {
+  return {
+    title: elements.prodTitle.value.trim(),
+    problemStatement: elements.prodProblemStatement.value.trim(),
+    budgetDrops: elements.prodBudget.value.trim(),
+    companyWallet: elements.prodCompanyWallet.value.trim() || state.health?.companyAddress || ""
+  };
+}
+
+function getProductionClarificationSignature(input = getProductionMissionDraftInput()) {
+  return [input.title, input.problemStatement, input.budgetDrops, input.companyWallet].join("::");
+}
+
+function productionClarificationIsFresh() {
+  return (
+    Boolean(state.productionClarification) &&
+    state.productionClarificationSignature === getProductionClarificationSignature()
+  );
 }
 
 function setButtonLoading(button, loading, busyLabel = "Working...") {
@@ -863,17 +885,14 @@ async function refreshMissions() {
 }
 
 async function clarifyProductionMission() {
-  const companyWallet = elements.prodCompanyWallet.value.trim() || state.health?.companyAddress || "";
+  const input = getProductionMissionDraftInput();
   const result = await api("/missions/intake/clarify", {
     method: "POST",
-    body: JSON.stringify({
-      title: elements.prodTitle.value.trim(),
-      problemStatement: elements.prodProblemStatement.value.trim(),
-      budgetDrops: elements.prodBudget.value.trim(),
-      companyWallet
-    })
+    body: JSON.stringify(input)
   });
 
+  state.productionClarification = result.clarification;
+  state.productionClarificationSignature = getProductionClarificationSignature(input);
   renderClarification(result.clarification);
   showProdStatus("Platform agent clarification completed. Review the structured mission framing below.", "info");
   return result;
@@ -954,20 +973,17 @@ async function createMission(inputOverrides = {}) {
 }
 
 async function createProductionMission() {
-  const companyWallet = elements.prodCompanyWallet.value.trim() || state.health?.companyAddress || "";
+  const input = getProductionMissionDraftInput();
   const result = await api("/missions/intake", {
     method: "POST",
-    body: JSON.stringify({
-      title: elements.prodTitle.value.trim(),
-      problemStatement: elements.prodProblemStatement.value.trim(),
-      budgetDrops: elements.prodBudget.value.trim(),
-      companyWallet
-    })
+    body: JSON.stringify(input)
   });
 
   const { mission, clarification } = result;
   state.selectedMissionId = mission.id;
   state.missions.unshift(mission);
+  state.productionClarification = clarification;
+  state.productionClarificationSignature = getProductionClarificationSignature(input);
   renderClarification(clarification);
   showProdStatus("Mission draft created successfully. The platform fee was applied automatically.", "success");
   renderAll();
@@ -1297,8 +1313,14 @@ function attachListeners() {
     const button = event.currentTarget;
     try {
       hideProdStatus();
-      showProdStatus("Creating the mission draft and applying the platform fee automatically.", "info");
-      const mission = await runWithButtonLoading(button, "Creating draft...", () => createProductionMission());
+      const mission = await runWithButtonLoading(button, "Clarifying and creating...", async () => {
+        if (!productionClarificationIsFresh()) {
+          showProdStatus("No current clarification found for this problem. Running the platform agent first.", "info");
+          await clarifyProductionMission();
+        }
+        showProdStatus("Creating the mission draft and applying the platform fee automatically.", "info");
+        return createProductionMission();
+      });
       state.selectedMissionId = mission.id;
       await refreshSelectedMission();
       renderProductionMissionList();
