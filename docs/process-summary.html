@@ -123,13 +123,7 @@
     .arrow{
       display:grid;
       justify-items:center;
-      gap:8px;
       padding:2px 0;
-    }
-    .arrow-line{
-      width:2px;
-      height:20px;
-      background:linear-gradient(180deg, rgba(124,156,255,.78), rgba(77,226,197,.52));
     }
     .arrow-head{
       width:38px;
@@ -141,6 +135,12 @@
       font-size:20px;
       background:linear-gradient(180deg, rgba(124,156,255,.94), rgba(77,226,197,.86));
       box-shadow:0 12px 22px rgba(77,226,197,.14);
+    }
+    .mobile-bridge{
+      display:none;
+      justify-items:center;
+      gap:8px;
+      padding:4px 0;
     }
     .footer{
       margin-top:20px;
@@ -168,6 +168,7 @@
       .columns{grid-template-columns:1fr}
       .footer{grid-template-columns:1fr}
       .step h2{font-size:21px}
+      .mobile-bridge{display:grid}
     }
   </style>
 </head>
@@ -177,7 +178,7 @@
       <div class="eyebrow">Proof of Contribution</div>
       <h1><span class="gradient">Process Summary</span></h1>
       <p class="sub">
-        Clean two-column overview of the base workflow, from company problem intake to XRPL settlement.
+        Clean overview of the base workflow, from company problem intake to XRPL settlement.
       </p>
     </div>
 
@@ -193,7 +194,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
@@ -206,7 +206,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
@@ -219,7 +218,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
@@ -232,6 +230,10 @@
           </div>
         </div>
 
+        <div class="mobile-bridge">
+          <div class="arrow-head">↓</div>
+        </div>
+
         <div class="column">
           <div class="step">
             <div class="step-head">
@@ -242,7 +244,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
@@ -255,7 +256,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
@@ -268,7 +268,6 @@
           </div>
 
           <div class="arrow">
-            <div class="arrow-line"></div>
             <div class="arrow-head">↓</div>
           </div>
 
