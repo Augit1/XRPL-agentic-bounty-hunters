@@ -1,11 +1,47 @@
 services:
   - type: web
-    name: xrpl-agentic-bounty-hunters
+    name: poc-demo
     runtime: docker
     plan: starter
     autoDeploy: true
     envVars:
       - key: NODE_ENV
+        value: production
+      - key: APP_MODE
+        value: demo
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: DATABASE_PATH
+        value: /app/data/app.db
+      - key: ALLOW_DEMO_WALLETS
+        value: true
+      - key: USE_MOCK_XRPL
+        value: false
+      - key: XRPL_SERVER
+        value: wss://s.altnet.rippletest.net:51233
+      - key: XRPL_EXPLORER_BASE_URL
+        value: https://testnet.xrpl.org
+      - key: X402_CONTEXT_FEE_DROPS
+        value: 10
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: XRPL_SETTLEMENT_SEED
+        sync: false
+      - key: XRPL_TREASURY_SEED
+        sync: false
+      - key: XRPL_COMPANY_SEED
+        sync: false
+  - type: web
+    name: poc-app
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_MODE
         value: production
       - key: HOST
         value: 0.0.0.0
@@ -21,6 +57,8 @@ services:
         value: wss://s.altnet.rippletest.net:51233
       - key: XRPL_EXPLORER_BASE_URL
         value: https://testnet.xrpl.org
+      - key: X402_CONTEXT_FEE_DROPS
+        value: 10
       - key: ADMIN_API_KEY
         sync: false
       - key: XRPL_SETTLEMENT_SEED

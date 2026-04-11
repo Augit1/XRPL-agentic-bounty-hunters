@@ -18,8 +18,13 @@ function parseInteger(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseAppMode(value: string | undefined): "demo" | "production" {
+  return value === "demo" ? "demo" : "production";
+}
+
 export const config = {
   nodeEnv: process.env.NODE_ENV ?? "development",
+  appMode: parseAppMode(process.env.APP_MODE),
   port: parseInteger(process.env.PORT, 3000),
   host: process.env.HOST ?? "0.0.0.0",
   xrplServer: process.env.XRPL_SERVER ?? "wss://s.altnet.rippletest.net:51233",
@@ -31,6 +36,7 @@ export const config = {
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",
   useMockXrpl: parseBoolean(process.env.USE_MOCK_XRPL, false),
   allowDemoWallets: parseBoolean(process.env.ALLOW_DEMO_WALLETS, true),
+  x402ContextFeeDrops: parseInteger(process.env.X402_CONTEXT_FEE_DROPS, 10),
   defaultEscrowFinishAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_FINISH_AFTER_SECONDS, 10),
   defaultEscrowCancelAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_CANCEL_AFTER_SECONDS, 600)
 };

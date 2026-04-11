@@ -1,17 +1,22 @@
-# XRPL Agentic Bounty Hunters MVP
+# Proof of Contribution
 
-This hackathon MVP implements the payment protocol layer for a future multi-agent problem-solving marketplace.
+This project is the payment protocol MVP for a future platform where companies fund real problems, autonomous agents contribute partial solutions, and rewards are split proportionally to real value created.
 
-The long-term product vision is a platform where a company escrows a mission budget, multiple autonomous agents submit useful solution bricks, a platform-side evaluator scores those contributions, and the escrowed budget is split proportionally to actual value created. The platform monetizes through a fee on each mission.
+The product is framed by the Proof of Contribution whitepaper: XRPL escrow funds the mission, x402-compatible endpoints meter access to structured platform intelligence, multiple agents contribute work, and the evaluator allocates payment according to marginal value created.
 
-This build focuses on a production-oriented foundation for the settlement core:
+This build now supports two website modes from one codebase:
+
+- `demo`: a guided, judge-friendly experience for the canonical hackathon flow
+- `production`: a stricter product surface for the real platform experience
+
+The shared settlement core remains the same in both modes:
 
 - XRPL escrow-backed mission funding
 - contribution storage
 - deterministic score-to-payout calculation
 - XRPL settlement wallet payout distribution
-- browser UI for the full mission lifecycle demo
-- optional x402-style paid submission extension point
+- browser UI for mission lifecycle demonstration
+- x402-compatible paid intelligence access endpoints
 
 ## Production Credentials
 
@@ -25,11 +30,13 @@ The deployed app should be configured with these secrets:
 Recommended non-secret env vars:
 
 - `NODE_ENV=production`
+- `APP_MODE=production` or `APP_MODE=demo`
 - `HOST=0.0.0.0`
 - `PORT=3000`
 - `DATABASE_PATH=/app/data/app.db`
 - `ALLOW_DEMO_WALLETS=false`
 - `USE_MOCK_XRPL=false`
+- `X402_CONTEXT_FEE_DROPS=10`
 
 ## Stack
 
@@ -85,6 +92,21 @@ http://localhost:3000
 ```
 
 6. Paste the `ADMIN_API_KEY` into the dashboard before using write actions.
+
+## Proof of Contribution Whitepaper Alignment
+
+The app is explicitly organized around the whitepaper layers:
+
+- Funding layer: XRPL escrow locks the company budget
+- Interaction layer: x402-compatible endpoints expose paid platform intelligence and structured context
+- Contribution layer: agents submit modular or complete work
+- Evaluation layer: the platform assigns contribution weights based on usefulness
+
+Core doctrine:
+
+- maximize the probability of solving the problem in the best possible way
+- reward only work that materially improves the final solution
+- do not require a single winner
 
 ## API
 
@@ -193,6 +215,36 @@ curl -X POST http://localhost:3000/missions/<missionId>/submit-paid \
   }'
 ```
 
+### x402-compatible platform intelligence query
+
+Without payment proof:
+
+```bash
+curl -X POST http://localhost:3000/missions/<missionId>/query-agent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What contribution would have the strongest marginal impact?"
+  }'
+```
+
+With payment proof:
+
+```bash
+curl -X POST http://localhost:3000/missions/<missionId>/query-agent \
+  -H "Content-Type: application/json" \
+  -H "x-payment-proof: mock-paid" \
+  -d '{
+    "question": "What contribution would have the strongest marginal impact?"
+  }'
+```
+
+Premium context:
+
+```bash
+curl http://localhost:3000/missions/<missionId>/premium-context \
+  -H "x-payment-proof: mock-paid"
+```
+
 With mock proof:
 
 ```bash
@@ -243,15 +295,22 @@ This repo now includes a Docker-based deployment path and a Render blueprint.
 
 ### Render
 
+The included `render.yaml` defines two services from the same codebase:
+
+- `poc-demo`: guided demo mode with demo helpers enabled
+- `poc-app`: production-style mode with a stricter operator surface
+
 1. Push the repo to GitHub.
 2. In Render, create a new Blueprint or Web Service from the repository.
-3. Set the secret env vars:
+3. Set the secret env vars on both services:
    - `ADMIN_API_KEY`
    - `XRPL_SETTLEMENT_SEED`
    - `XRPL_TREASURY_SEED`
    - `XRPL_COMPANY_SEED`
-4. Leave `ALLOW_DEMO_WALLETS=false` in production.
-5. Deploy and open the app URL.
+4. Keep `USE_MOCK_XRPL=false` on both services so XRPL escrow and settlement remain real.
+5. Attach a persistent disk mounted at `/app/data` for each paid service.
+6. Use `APP_MODE=demo` for the demo site and `APP_MODE=production` for the product site.
+7. Deploy and open both URLs.
 
 ### Generic Docker host
 
@@ -274,7 +333,7 @@ Important note: this version now uses SQLite for stronger local and single-insta
 
 ## Demo Story
 
-For the hackathon demo, position this as the payment layer for a future multi-agent bounty marketplace:
+For the hackathon demo, position this as Proof of Contribution: the payment and coordination layer for AI agents doing real work.
 
 1. A company creates a mission and commits a maximum budget.
 2. The budget is locked on XRPL using escrow.

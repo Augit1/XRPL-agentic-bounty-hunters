@@ -1,13 +1,13 @@
 :root {
-  --bg: #f5efe2;
-  --panel: rgba(255, 250, 240, 0.86);
-  --panel-strong: #fff9ef;
-  --ink: #1f1b17;
-  --muted: #6a5f56;
-  --accent: #d95d39;
-  --accent-dark: #a63f22;
-  --line: rgba(31, 27, 23, 0.12);
-  --shadow: 0 18px 50px rgba(84, 54, 28, 0.12);
+  --bg: #f4efe6;
+  --panel: rgba(255, 250, 242, 0.88);
+  --panel-strong: rgba(255, 255, 255, 0.8);
+  --ink: #181612;
+  --muted: #655d55;
+  --accent: #ce5a31;
+  --accent-strong: #8f3214;
+  --line: rgba(24, 22, 18, 0.1);
+  --shadow: 0 18px 54px rgba(76, 51, 24, 0.12);
   --radius: 24px;
 }
 
@@ -21,9 +21,21 @@ body {
   font-family: "Space Grotesk", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(217, 93, 57, 0.18), transparent 32%),
-    radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 26%),
-    linear-gradient(180deg, #f6f1e5 0%, #efe4d2 100%);
+    radial-gradient(circle at top left, rgba(206, 90, 49, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(34, 110, 160, 0.14), transparent 30%),
+    linear-gradient(180deg, #f8f4ec 0%, #efe3d2 100%);
+}
+
+body[data-app-mode="production"] {
+  --bg: #edf1ed;
+  --panel: rgba(247, 250, 247, 0.9);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --accent: #1f7a63;
+  --accent-strong: #0f4f3d;
+  background:
+    radial-gradient(circle at top left, rgba(31, 122, 99, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(12, 57, 73, 0.1), transparent 28%),
+    linear-gradient(180deg, #edf3ef 0%, #e1ebe5 100%);
 }
 
 button,
@@ -33,35 +45,40 @@ textarea {
 }
 
 .shell {
-  width: min(1400px, calc(100vw - 32px));
+  width: min(1450px, calc(100vw - 30px));
   margin: 0 auto;
-  padding: 32px 0 48px;
+  padding: 28px 0 44px;
 }
 
 .hero,
 .panel,
 .card {
   background: var(--panel);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(20px);
   box-shadow: var(--shadow);
 }
 
 .hero {
-  border-radius: 32px;
-  padding: 32px;
+  border-radius: 34px;
+  padding: 34px;
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 26px;
+  margin-bottom: 22px;
+}
+
+.hero-copy-wrap {
+  display: grid;
+  gap: 14px;
 }
 
 .eyebrow {
-  margin: 0 0 12px;
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: var(--accent-dark);
   font-size: 0.78rem;
+  color: var(--accent-strong);
 }
 
 h1,
@@ -72,29 +89,39 @@ p {
 }
 
 h1 {
-  font-size: clamp(2.2rem, 4vw, 4.5rem);
+  margin-bottom: 0;
+  font-size: clamp(2.2rem, 4vw, 4.8rem);
   line-height: 0.95;
-  margin-bottom: 16px;
   max-width: 12ch;
 }
 
-.hero-copy {
+.hero-copy,
+.helper-copy,
+.architecture-item p {
   color: var(--muted);
-  max-width: 58ch;
   line-height: 1.55;
-  margin-bottom: 0;
+}
+
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-panel,
+.panel,
+.card {
+  border-radius: var(--radius);
 }
 
 .hero-panel {
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(31, 27, 23, 0.08);
-  border-radius: 24px;
   padding: 20px;
+  background: rgba(255, 255, 255, 0.56);
 }
 
 .status-row {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -110,15 +137,36 @@ h1 {
   color: var(--muted);
 }
 
-.grid {
+.overview-grid,
+.grid,
+.action-grid,
+.detail-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  gap: 24px;
+  gap: 22px;
+}
+
+.overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 22px;
+}
+
+.grid {
+  grid-template-columns: minmax(330px, 430px) minmax(0, 1fr);
+}
+
+.action-grid,
+.detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
 }
 
 .panel {
-  border-radius: var(--radius);
-  padding: 24px;
+  padding: 22px;
+}
+
+.card {
+  padding: 20px;
+  background: var(--panel-strong);
 }
 
 .panel-header,
@@ -150,7 +198,7 @@ textarea {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--ink);
 }
 
@@ -163,29 +211,28 @@ button {
   border-radius: 999px;
   padding: 12px 18px;
   background: var(--accent);
-  color: white;
+  color: #fff;
   cursor: pointer;
-  transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
+  transition: transform 160ms ease, background 160ms ease, opacity 160ms ease;
 }
 
 button:hover {
   transform: translateY(-1px);
-  background: var(--accent-dark);
+  background: var(--accent-strong);
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+button.hidden,
+.hidden {
+  display: none;
 }
 
 .ghost-button {
-  background: rgba(31, 27, 23, 0.06);
+  background: rgba(24, 22, 18, 0.06);
   color: var(--ink);
 }
 
 .ghost-button:hover {
-  background: rgba(31, 27, 23, 0.12);
+  background: rgba(24, 22, 18, 0.12);
 }
 
 .inline-fields {
@@ -196,11 +243,27 @@ button:disabled {
 
 .input-action {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.mission-list {
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--accent) 16%, white);
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+}
+
+.pill.muted {
+  background: rgba(24, 22, 18, 0.08);
+  color: var(--muted);
+}
+
+.mission-list,
+.activity-log {
   display: grid;
   gap: 12px;
   margin-top: 12px;
@@ -208,7 +271,7 @@ button:disabled {
 
 .mission-card {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 20px;
   padding: 16px;
   cursor: pointer;
@@ -217,67 +280,25 @@ button:disabled {
 
 .mission-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(217, 93, 57, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 55%, white);
 }
 
 .mission-card.active {
-  border-color: rgba(217, 93, 57, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(217, 93, 57, 0.18);
+  border-color: color-mix(in srgb, var(--accent) 70%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, white);
 }
 
-.mission-card p,
-.mission-card h3 {
-  margin-bottom: 8px;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 6px 12px;
-  background: rgba(217, 93, 57, 0.14);
-  color: var(--accent-dark);
-  font-size: 0.88rem;
-}
-
-.pill.muted {
-  background: rgba(31, 27, 23, 0.08);
-  color: var(--muted);
-}
-
-.hidden {
-  display: none;
-}
-
-.empty-state {
+.empty-state,
+.doctrine-item,
+.architecture-item {
   border: 1px dashed var(--line);
-  border-radius: 20px;
-  padding: 24px;
-  color: var(--muted);
-}
-
-.action-grid,
-.detail-grid {
-  display: grid;
-  gap: 18px;
-  margin-top: 18px;
-}
-
-.action-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.detail-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.card {
-  border-radius: 24px;
-  padding: 20px;
+  border-radius: 18px;
+  padding: 16px 18px;
 }
 
 .json-view,
-code {
+code,
+.mono {
   font-family: "IBM Plex Mono", monospace;
 }
 
@@ -287,20 +308,14 @@ code {
   margin: 0;
   max-height: 520px;
   overflow: auto;
-  color: #2e2924;
 }
 
 .log-panel {
-  margin-top: 24px;
-}
-
-.activity-log {
-  display: grid;
-  gap: 10px;
+  margin-top: 22px;
 }
 
 .log-entry {
-  border-left: 4px solid rgba(217, 93, 57, 0.56);
+  border-left: 4px solid color-mix(in srgb, var(--accent) 60%, white);
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.66);
   border-radius: 14px;
@@ -308,32 +323,30 @@ code {
 
 .log-entry time {
   display: block;
-  color: var(--muted);
   font-size: 0.82rem;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
-.mono {
-  font-family: "IBM Plex Mono", monospace;
-}
-
-@media (max-width: 1100px) {
-  .hero,
+@media (max-width: 1200px) {
+  .overview-grid,
   .grid,
   .action-grid,
-  .detail-grid {
+  .detail-grid,
+  .hero {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   .shell {
-    width: min(100vw - 20px, 100%);
-    padding-top: 20px;
+    width: min(100vw - 18px, 100%);
+    padding-top: 18px;
   }
 
   .hero,
-  .panel {
+  .panel,
+  .card {
     padding: 18px;
   }
 

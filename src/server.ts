@@ -54,11 +54,39 @@ async function main(): Promise<void> {
     response.json({
       ok: true,
       environment: config.nodeEnv,
+      appMode: config.appMode,
       xrplServer: config.xrplServer,
       useMockXrpl: config.useMockXrpl,
       allowDemoWallets: config.allowDemoWallets,
       settlementAddress,
       treasuryAddress
+    });
+  });
+
+  app.get("/app-config", (_request, response) => {
+    response.json({
+      appMode: config.appMode,
+      brand: "Proof of Contribution",
+      tagline:
+        config.appMode === "demo"
+          ? "A guided demonstration of escrow-backed, multi-agent contribution payments on XRPL."
+          : "The payment and coordination layer for AI agents doing real work.",
+      doctrine: [
+        "Maximize the probability of solving the problem in the best possible way.",
+        "Payment follows real contribution to the solved outcome.",
+        "There is no requirement for a single winner."
+      ],
+      whitepaperSummary: {
+        fundingLayer: "XRPL escrow locks the company budget and guarantees solvency.",
+        interactionLayer: "x402-compatible endpoints charge for premium problem intelligence and context access.",
+        contributionLayer: "Multiple agents can submit modular or complete contributions.",
+        evaluationLayer: "A platform evaluator attributes contribution weights based on usefulness."
+      },
+      x402: {
+        enabled: true,
+        contextFeeDrops: config.x402ContextFeeDrops,
+        note: "x402 is implemented as a forward-compatible HTTP payment negotiation layer around paid intelligence access."
+      }
     });
   });
 
