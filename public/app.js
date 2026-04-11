@@ -364,7 +364,7 @@ function feePreviewText(budgetDrops, feeBps = platformFeeBps()) {
     return `${platformFeePercentLabel(feeBps)} of budget`;
   }
 
-  return `${feeAmount} drops fee (${platformFeePercentLabel(feeBps)} of ${String(budgetDrops).trim()} drops)`;
+  return `${feeAmount} drops`;
 }
 
 function setFeePreviewFromBudget() {
