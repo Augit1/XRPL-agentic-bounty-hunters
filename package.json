@@ -9,7 +9,8 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/src/server.js",
     "demo": "tsx src/scripts/demo.ts",
-    "test:settlement": "tsx test/settlement.test.ts"
+    "test:settlement": "tsx test/settlement.test.ts",
+    "site:sync": "cp proof_of_contribution_workflow.html docs/index.html"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

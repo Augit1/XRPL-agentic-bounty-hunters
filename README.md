@@ -46,6 +46,27 @@ Recommended non-secret env vars:
 - `xrpl`
 - SQLite-backed persistence via Node's built-in `node:sqlite`
 
+## Static Website
+
+The repo now includes a deployable static site entrypoint at [docs/index.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/docs/index.html).
+
+This is intentionally separate from the app UI in [public/index.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/public/index.html), so you can deploy the workflow page as a standalone static website without affecting the product demo.
+
+Useful commands:
+
+```bash
+npm run site:sync
+```
+
+That command refreshes `docs/index.html` from the source file at [proof_of_contribution_workflow.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/proof_of_contribution_workflow.html).
+
+For GitHub Pages, a simple setup is:
+
+1. Push the repo to GitHub.
+2. In repository settings, enable Pages.
+3. Choose `Deploy from a branch`.
+4. Select your main branch and the `/docs` folder.
+
 ## Mission Lifecycle
 
 - `draft`
