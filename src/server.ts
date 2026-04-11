@@ -10,6 +10,7 @@ import { SettlementExecutionService } from "./services/settlementExecutionServic
 import { xrplService } from "./services/xrplService";
 import { X402Adapter } from "./services/x402Adapter";
 import { createMissionRouter } from "./routes/missions";
+import { createX402Router } from "./routes/x402";
 import { requireAdminApiKey } from "./middleware/auth";
 
 async function main(): Promise<void> {
@@ -63,7 +64,8 @@ async function main(): Promise<void> {
       allowDemoWallets: config.allowDemoWallets,
       companyAddress,
       settlementAddress,
-      treasuryAddress
+      treasuryAddress,
+      x402: x402Adapter.getPublicStatus()
     });
   });
 
@@ -87,9 +89,9 @@ async function main(): Promise<void> {
         evaluationLayer: "A platform evaluator attributes contribution weights based on usefulness."
       },
       x402: {
-        enabled: true,
-        contextFeeDrops: config.x402ContextFeeDrops,
-        note: "x402 is implemented as a forward-compatible HTTP payment negotiation layer around paid intelligence access."
+        ...x402Adapter.getPublicStatus(),
+        note:
+          "x402 is implemented as a real paid HTTP interaction layer around platform-agent intelligence, while XRPL remains the mission settlement rail."
       },
       xrplExplorerBaseUrl: config.xrplExplorerBaseUrl,
       wallets: {
@@ -130,7 +132,8 @@ async function main(): Promise<void> {
     response.sendFile(path.resolve(process.cwd(), "public/index.html"));
   });
 
-  app.use("/missions", createMissionRouter(missionService, settlementExecutionService, x402Adapter));
+  app.use("/missions", createMissionRouter(missionService, settlementExecutionService));
+  app.use("/x402", createX402Router(missionService, x402Adapter));
 
   app.use((error: unknown, request: express.Request, response: express.Response, _next: express.NextFunction) => {
     const message = error instanceof Error ? error.message : "Unknown server error";

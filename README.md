@@ -22,7 +22,7 @@ It includes:
 
 - an Express + TypeScript API for mission creation, funding, contribution submission, resolution, and settlement
 - XRPL-backed mission funding and payout flows
-- x402-style paid intelligence endpoints for agent queries and premium mission context
+- a real x402-powered paid intelligence endpoint for platform-agent queries
 - a browser UI in [`public/`](./public) for demo and product flows
 - a static whitepaper / workflow website in [`docs/index.html`](./docs/index.html)
 
@@ -133,15 +133,15 @@ The current scoring model is built around the whitepaper’s criteria:
 
 Low-signal contributions can be assigned zero.
 
-### x402-style endpoints
+### x402 paid intelligence
 
-The API includes forward-compatible paid endpoints for:
+The API now includes a real x402 v2 query path for platform-agent intelligence:
 
-- querying the platform agent
-- retrieving premium mission context
-- optional paid submission flow
+- `POST /x402/query-agent` is protected by the official x402 middleware
+- the server returns a real `402 Payment Required` negotiation response when unpaid
+- the demo site can execute a real server-side x402 buyer flow and print the full transcript into the UI logs
 
-These endpoints return `402`-style payment negotiation payloads when payment proof is missing.
+XRPL remains the mission funding and payout rail. x402 is used for paid API access around the mission.
 
 ## Repo Structure
 
@@ -165,8 +165,9 @@ proof_of_contribution_workflow.html
 Important files:
 
 - [`src/server.ts`](./src/server.ts): app bootstrap, health endpoints, static serving, and route wiring
-- [`src/routes/missions.ts`](./src/routes/missions.ts): mission lifecycle and x402-style routes
-- [`src/services/`](./src/services): mission logic, scoring, storage, XRPL integration, settlement execution
+- [`src/routes/missions.ts`](./src/routes/missions.ts): mission lifecycle routes
+- [`src/routes/x402.ts`](./src/routes/x402.ts): real x402 query endpoints and demo helper
+- [`src/services/`](./src/services): mission logic, scoring, storage, XRPL integration, settlement execution, x402 adapter
 - [`public/index.html`](./public/index.html): browser UI for the app
 - [`docs/index.html`](./docs/index.html): deployable static workflow/whitepaper page
 - [`render.yaml`](./render.yaml): Render blueprint for app services and static site
@@ -206,6 +207,14 @@ Required when `USE_MOCK_XRPL=false`:
 - `XRPL_TREASURY_SEED`
 - `XRPL_COMPANY_SEED`
 
+Required when `X402_ENABLED=true`:
+
+- `X402_PAY_TO`
+
+Required to run the guided x402 payment step in demo mode:
+
+- `X402_DEMO_BUYER_PRIVATE_KEY`
+
 Useful environment variables:
 
 - `NODE_ENV=production`
@@ -215,9 +224,19 @@ Useful environment variables:
 - `DATABASE_PATH=./data/app.db`
 - `ALLOW_DEMO_WALLETS=true`
 - `USE_MOCK_XRPL=true` for local/demo-only runs
-- `X402_CONTEXT_FEE_DROPS=10`
 - `XRPL_SERVER=wss://s.altnet.rippletest.net:51233`
 - `XRPL_EXPLORER_BASE_URL=https://testnet.xrpl.org`
+- `X402_ENABLED=false`
+- `X402_FACILITATOR_URL=https://x402.org/facilitator`
+- `X402_NETWORK=eip155:84532`
+- `X402_PRICE_USD=$0.01`
+- `X402_EVM_RPC_URL=https://sepolia.base.org`
+- `X402_EXPLORER_BASE_URL=https://sepolia.basescan.org`
+
+To make x402 genuinely live, fund a Base Sepolia buyer wallet with the asset required by the configured x402 payment scheme and set:
+
+- `X402_PAY_TO=<seller address>`
+- `X402_DEMO_BUYER_PRIVATE_KEY=<buyer private key>`
 
 ### 4. Start the app
 
@@ -331,22 +350,31 @@ curl -X POST http://localhost:3000/missions/<missionId>/settle \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-### Query the platform agent with x402-style payment negotiation
-
-Without payment proof, the endpoint returns a payment-required response:
+### Query the platform agent with real x402
 
 ```bash
-curl -X POST http://localhost:3000/missions/<missionId>/query-agent \
+curl -X POST http://localhost:3000/x402/query-agent \
   -H "Content-Type: application/json" \
   -d '{
+    "missionId": "<missionId>",
     "question": "What kind of contribution would be most useful?"
   }'
 ```
 
-### Retrieve premium context
+If x402 is enabled, that endpoint returns a real `402 Payment Required` response until the client retries with a valid x402 payment.
+
+### Run the guided x402 demo flow
+
+This helper is what the demo UI uses to show the entire x402 handshake in the protocol log:
 
 ```bash
-curl http://localhost:3000/missions/<missionId>/premium-context
+curl -X POST http://localhost:3000/x402/demo/query-agent \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{
+    "missionId": "<missionId>",
+    "question": "What kind of contribution would be most useful?"
+  }'
 ```
 
 ## Static Website

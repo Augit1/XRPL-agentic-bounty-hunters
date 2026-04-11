@@ -27,8 +27,18 @@ services:
         value: wss://s.altnet.rippletest.net:51233
       - key: XRPL_EXPLORER_BASE_URL
         value: https://testnet.xrpl.org
-      - key: X402_CONTEXT_FEE_DROPS
-        value: 10
+      - key: X402_ENABLED
+        value: false
+      - key: X402_FACILITATOR_URL
+        value: https://x402.org/facilitator
+      - key: X402_NETWORK
+        value: eip155:84532
+      - key: X402_PRICE_USD
+        value: $0.01
+      - key: X402_EVM_RPC_URL
+        value: https://sepolia.base.org
+      - key: X402_EXPLORER_BASE_URL
+        value: https://sepolia.basescan.org
       - key: ADMIN_API_KEY
         sync: false
       - key: XRPL_SETTLEMENT_SEED
@@ -36,6 +46,10 @@ services:
       - key: XRPL_TREASURY_SEED
         sync: false
       - key: XRPL_COMPANY_SEED
+        sync: false
+      - key: X402_PAY_TO
+        sync: false
+      - key: X402_DEMO_BUYER_PRIVATE_KEY
         sync: false
   - type: web
     name: poc-app
@@ -61,8 +75,18 @@ services:
         value: wss://s.altnet.rippletest.net:51233
       - key: XRPL_EXPLORER_BASE_URL
         value: https://testnet.xrpl.org
-      - key: X402_CONTEXT_FEE_DROPS
-        value: 10
+      - key: X402_ENABLED
+        value: false
+      - key: X402_FACILITATOR_URL
+        value: https://x402.org/facilitator
+      - key: X402_NETWORK
+        value: eip155:84532
+      - key: X402_PRICE_USD
+        value: $0.01
+      - key: X402_EVM_RPC_URL
+        value: https://sepolia.base.org
+      - key: X402_EXPLORER_BASE_URL
+        value: https://sepolia.basescan.org
       - key: ADMIN_API_KEY
         sync: false
       - key: XRPL_SETTLEMENT_SEED
@@ -70,4 +94,8 @@ services:
       - key: XRPL_TREASURY_SEED
         sync: false
       - key: XRPL_COMPANY_SEED
+        sync: false
+      - key: X402_PAY_TO
+        sync: false
+      - key: X402_DEMO_BUYER_PRIVATE_KEY
         sync: false

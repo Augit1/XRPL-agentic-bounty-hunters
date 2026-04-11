@@ -37,7 +37,14 @@ export const config = {
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",
   useMockXrpl: parseBoolean(process.env.USE_MOCK_XRPL, false),
   allowDemoWallets: parseBoolean(process.env.ALLOW_DEMO_WALLETS, true),
-  x402ContextFeeDrops: parseInteger(process.env.X402_CONTEXT_FEE_DROPS, 10),
+  x402Enabled: parseBoolean(process.env.X402_ENABLED, false),
+  x402FacilitatorUrl: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
+  x402Network: process.env.X402_NETWORK ?? "eip155:84532",
+  x402PriceUsd: process.env.X402_PRICE_USD ?? "$0.01",
+  x402PayTo: process.env.X402_PAY_TO ?? "",
+  x402DemoBuyerPrivateKey: process.env.X402_DEMO_BUYER_PRIVATE_KEY ?? "",
+  x402EvmRpcUrl: process.env.X402_EVM_RPC_URL ?? "https://sepolia.base.org",
+  x402ExplorerBaseUrl: process.env.X402_EXPLORER_BASE_URL ?? "https://sepolia.basescan.org",
   defaultEscrowFinishAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_FINISH_AFTER_SECONDS, 10),
   defaultEscrowCancelAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_CANCEL_AFTER_SECONDS, 600)
 };
@@ -59,5 +66,9 @@ export function validateConfig(): void {
     if (!config.companySeed) {
       throw new Error("XRPL_COMPANY_SEED is required when USE_MOCK_XRPL=false");
     }
+  }
+
+  if (config.x402Enabled && !config.x402PayTo) {
+    throw new Error("X402_PAY_TO is required when X402_ENABLED=true");
   }
 }

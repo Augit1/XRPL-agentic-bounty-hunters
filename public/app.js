@@ -36,7 +36,6 @@ const state = {
   selectedMissionId: null,
   activity: [],
   apiKey: window.localStorage.getItem(API_KEY_STORAGE_KEY) || "",
-  paymentProof: "mock-paid",
   companyWallet: "",
   contributionWallets: [],
   lastQueryResult: null,
@@ -118,7 +117,6 @@ async function api(path, options = {}) {
     headers: {
       "Content-Type": "application/json",
       ...(state.apiKey ? { "x-api-key": state.apiKey } : {}),
-      ...(options.usePaymentProof ? { "x-payment-proof": state.paymentProof } : {}),
       ...(options.headers || {})
     }
   });
@@ -207,6 +205,10 @@ function explorerBaseUrl() {
   );
 }
 
+function x402ExplorerBaseUrl() {
+  return state.appConfig?.x402?.explorerBaseUrl || state.health?.x402?.explorerBaseUrl || "https://sepolia.basescan.org";
+}
+
 function isLikelyTxHash(value) {
   return typeof value === "string" && /^[A-F0-9]{64}$/i.test(value);
 }
@@ -215,12 +217,28 @@ function isLikelyXrplAddress(value) {
   return typeof value === "string" && /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(value);
 }
 
+function isLikelyEvmTxHash(value) {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function isLikelyEvmAddress(value) {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
 function transactionExplorerUrl(hash) {
   return `${explorerBaseUrl()}/transactions/${encodeURIComponent(hash)}`;
 }
 
 function accountExplorerUrl(address) {
   return `${explorerBaseUrl()}/accounts/${encodeURIComponent(address)}`;
+}
+
+function x402TransactionExplorerUrl(hash) {
+  return `${x402ExplorerBaseUrl()}/tx/${encodeURIComponent(hash)}`;
+}
+
+function x402AddressExplorerUrl(address) {
+  return `${x402ExplorerBaseUrl()}/address/${encodeURIComponent(address)}`;
 }
 
 function explorerAnchor(url, label) {
@@ -253,6 +271,28 @@ function renderExplorerItems(payload) {
         seen.add(token);
         items.push(
           `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(accountExplorerUrl(value), "view account")}</span>`
+        );
+      }
+      return;
+    }
+
+    if (typeof value === "string" && isLikelyEvmTxHash(value)) {
+      const token = `evm-tx:${value}`;
+      if (!seen.has(token)) {
+        seen.add(token);
+        items.push(
+          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(x402TransactionExplorerUrl(value), "open x402 tx")}</span>`
+        );
+      }
+      return;
+    }
+
+    if (typeof value === "string" && isLikelyEvmAddress(value)) {
+      const token = `evm-account:${value}`;
+      if (!seen.has(token)) {
+        seen.add(token);
+        items.push(
+          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(x402AddressExplorerUrl(value), "view wallet")}</span>`
         );
       }
       return;
@@ -782,20 +822,53 @@ async function queryPlatformAgent() {
     throw new Error("Create the mission first, then query the platform agent.");
   }
 
-  const result = await api(`/missions/${mission.id}/query-agent`, {
+  const result = await api("/x402/demo/query-agent", {
     method: "POST",
     body: JSON.stringify({
+      missionId: mission.id,
       question: "What kind of contribution creates the strongest marginal improvement?"
-    }),
-    usePaymentProof: true
+    })
   });
 
   state.lastQueryResult = result;
   elements.queryJson.textContent = JSON.stringify(result, null, 2);
+
+  if (result.x402?.paymentRequired) {
+    logActivity(
+      "4.1 x402 payment requested",
+      "The protected endpoint returned HTTP 402 with the accepted payment requirements for paid mission intelligence.",
+      result.x402.paymentRequired
+    );
+  }
+
+  if (result.x402?.paymentResponse) {
+    logActivity(
+      "4.2 x402 payment settled",
+      "The demo buyer retried with a signed x402 payment and the seller settled it on the configured x402 network.",
+      {
+        buyerAddress: result.x402.buyerAddress,
+        payTo: result.x402.payTo,
+        network: result.x402.network,
+        price: result.x402.price,
+        transaction: result.x402.paymentResponse.transaction,
+        transactionExplorerUrl: result.x402.transactionExplorerUrl,
+        payer: result.x402.paymentResponse.payer
+      }
+    );
+  }
+
   logActivity(
-    "4. Agent queried platform intelligence via x402",
+    "4.3 Platform agent answered",
     "Paid context access returned structured hints about how to maximize useful contribution.",
-    result
+    {
+      answer: result.answer,
+      x402: {
+        network: result.x402?.network,
+        price: result.x402?.price,
+        initialStatus: result.x402?.initialStatus,
+        paidStatus: result.x402?.paidStatus
+      }
+    }
   );
 }
 
@@ -1098,7 +1171,9 @@ async function boot() {
     if (state.appConfig?.appMode === "demo") {
       logActivity(
         "Interface ready",
-        "The guided protocol board is loaded. Run the flow step by step or use the one-click demo."
+        state.appConfig?.x402?.enabled
+          ? "The guided protocol board is loaded with real XRPL settlement and a live x402 paid-query path."
+          : "The guided protocol board is loaded. XRPL is ready, but x402 still needs its EVM credentials before the paid-query step can run for real."
       );
     }
   } catch (error) {
