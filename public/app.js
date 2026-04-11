@@ -2,7 +2,8 @@ const state = {
   health: null,
   missions: [],
   selectedMissionId: null,
-  activity: []
+  activity: [],
+  apiKey: window.localStorage.getItem("adminApiKey") || ""
 };
 
 const elements = {
@@ -23,7 +24,8 @@ const elements = {
   fundForm: document.getElementById("fund-form"),
   scoreInputs: document.getElementById("score-inputs"),
   activityLog: document.getElementById("activity-log"),
-  companyWallet: document.getElementById("company-wallet")
+  companyWallet: document.getElementById("company-wallet"),
+  apiKeyInput: document.getElementById("api-key-input")
 };
 
 async function api(path, options = {}) {
@@ -31,6 +33,7 @@ async function api(path, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(state.apiKey ? { "x-api-key": state.apiKey } : {}),
       ...(options.headers || {})
     }
   });
@@ -395,6 +398,12 @@ document.getElementById("clear-log").addEventListener("click", () => {
   renderActivity();
 });
 
+document.getElementById("save-api-key").addEventListener("click", () => {
+  state.apiKey = elements.apiKeyInput.value.trim();
+  window.localStorage.setItem("adminApiKey", state.apiKey);
+  logActivity("Saved admin API key in browser");
+});
+
 document.getElementById("generate-company-wallet").addEventListener("click", async () => {
   try {
     await generateWallet(elements.companyWallet);
@@ -414,6 +423,7 @@ document.getElementById("generate-contributor-wallet").addEventListener("click",
 
 async function boot() {
   renderActivity();
+  elements.apiKeyInput.value = state.apiKey;
   try {
     await loadHealth();
     await loadMissions();

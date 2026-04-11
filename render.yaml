@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: xrpl-agentic-bounty-hunters
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: MISSION_STORE_PATH
+        value: /app/data/missions.json
+      - key: ALLOW_DEMO_WALLETS
+        value: false
+      - key: USE_MOCK_XRPL
+        value: false
+      - key: XRPL_SERVER
+        value: wss://s.altnet.rippletest.net:51233
+      - key: XRPL_EXPLORER_BASE_URL
+        value: https://testnet.xrpl.org
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: XRPL_SETTLEMENT_SEED
+        sync: false
+      - key: XRPL_TREASURY_SEED
+        sync: false
+      - key: XRPL_COMPANY_SEED
+        sync: false

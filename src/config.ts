@@ -19,14 +19,38 @@ function parseInteger(value: string | undefined, fallback: number): number {
 }
 
 export const config = {
+  nodeEnv: process.env.NODE_ENV ?? "development",
   port: parseInteger(process.env.PORT, 3000),
+  host: process.env.HOST ?? "0.0.0.0",
   xrplServer: process.env.XRPL_SERVER ?? "wss://s.altnet.rippletest.net:51233",
   xrplExplorerBaseUrl: process.env.XRPL_EXPLORER_BASE_URL ?? "https://testnet.xrpl.org",
   missionStorePath: path.resolve(cwd, process.env.MISSION_STORE_PATH ?? "./data/missions.json"),
+  adminApiKey: process.env.ADMIN_API_KEY ?? "",
   settlementSeed: process.env.XRPL_SETTLEMENT_SEED ?? "",
   treasurySeed: process.env.XRPL_TREASURY_SEED ?? "",
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",
   useMockXrpl: parseBoolean(process.env.USE_MOCK_XRPL, false),
+  allowDemoWallets: parseBoolean(process.env.ALLOW_DEMO_WALLETS, true),
   defaultEscrowFinishAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_FINISH_AFTER_SECONDS, 10),
   defaultEscrowCancelAfterSeconds: parseInteger(process.env.DEFAULT_ESCROW_CANCEL_AFTER_SECONDS, 600)
 };
+
+export function validateConfig(): void {
+  if (!config.adminApiKey) {
+    throw new Error("ADMIN_API_KEY is required");
+  }
+
+  if (!config.useMockXrpl) {
+    if (!config.settlementSeed) {
+      throw new Error("XRPL_SETTLEMENT_SEED is required when USE_MOCK_XRPL=false");
+    }
+
+    if (!config.treasurySeed) {
+      throw new Error("XRPL_TREASURY_SEED is required when USE_MOCK_XRPL=false");
+    }
+
+    if (!config.companySeed) {
+      throw new Error("XRPL_COMPANY_SEED is required when USE_MOCK_XRPL=false");
+    }
+  }
+}

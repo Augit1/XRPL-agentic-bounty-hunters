@@ -1,6 +1,7 @@
 import express from "express";
+import helmet from "helmet";
 import path from "node:path";
-import { config } from "./config";
+import { config, validateConfig } from "./config";
 import { StorageService } from "./services/storageService";
 import { ScoringService } from "./services/scoringService";
 import { MissionService } from "./services/missionService";
@@ -8,10 +9,18 @@ import { SettlementExecutionService } from "./services/settlementExecutionServic
 import { xrplService } from "./services/xrplService";
 import { X402Adapter } from "./services/x402Adapter";
 import { createMissionRouter } from "./routes/missions";
+import { requireAdminApiKey } from "./middleware/auth";
 
 async function main(): Promise<void> {
+  validateConfig();
+
   const app = express();
-  app.use(express.json());
+  app.use(
+    helmet({
+      contentSecurityPolicy: false
+    })
+  );
+  app.use(express.json({ limit: "1mb" }));
   app.use(express.static(path.resolve(process.cwd(), "public")));
 
   const storageService = new StorageService(config.missionStorePath);
@@ -26,14 +35,23 @@ async function main(): Promise<void> {
   app.get("/health", (_request, response) => {
     response.json({
       ok: true,
+      environment: config.nodeEnv,
       xrplServer: config.xrplServer,
       useMockXrpl: config.useMockXrpl,
+      allowDemoWallets: config.allowDemoWallets,
       settlementAddress,
       treasuryAddress
     });
   });
 
-  app.post("/wallets/demo", async (_request, response) => {
+  app.post("/wallets/demo", requireAdminApiKey, async (_request, response) => {
+    if (!config.allowDemoWallets) {
+      response.status(403).json({
+        error: "Demo wallet creation is disabled in this environment"
+      });
+      return;
+    }
+
     const wallet = await xrplService.createDemoWallet();
     response.status(201).json(wallet);
   });
@@ -49,8 +67,8 @@ async function main(): Promise<void> {
     response.status(400).json({ error: message });
   });
 
-  const server = app.listen(config.port, () => {
-    console.log(`XRPL mission payment MVP listening on port ${config.port}`);
+  const server = app.listen(config.port, config.host, () => {
+    console.log(`XRPL mission payment MVP listening on ${config.host}:${config.port}`);
     console.log(`Settlement wallet: ${settlementAddress}`);
     console.log(`Treasury wallet: ${treasuryAddress}`);
   });

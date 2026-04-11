@@ -4,6 +4,7 @@ import { MissionService } from "../services/missionService";
 import { SettlementExecutionService } from "../services/settlementExecutionService";
 import { X402Adapter } from "../services/x402Adapter";
 import { buildSettlementPlan } from "../services/settlementService";
+import { requireAdminApiKey } from "../middleware/auth";
 
 type AsyncRoute = (request: any, response: any, next: any) => Promise<unknown>;
 
@@ -56,7 +57,7 @@ export function createMissionRouter(
     response.json({ missions });
   }));
 
-  router.post("/", asyncHandler(async (request, response) => {
+  router.post("/", requireAdminApiKey, asyncHandler(async (request, response) => {
     const input = createMissionSchema.parse(request.body);
     const mission = await missionService.createMission(input);
     response.status(201).json({ mission });
@@ -79,35 +80,35 @@ export function createMissionRouter(
     response.json({ mission, settlementPreview });
   }));
 
-  router.post("/:id/fund", asyncHandler(async (request, response) => {
+  router.post("/:id/fund", requireAdminApiKey, asyncHandler(async (request, response) => {
     const input = fundMissionSchema.parse(request.body ?? {});
     const mission = await settlementExecutionService.fundMission(request.params.id, input);
     response.json({ mission });
   }));
 
-  router.post("/:id/contributions", asyncHandler(async (request, response) => {
+  router.post("/:id/contributions", requireAdminApiKey, asyncHandler(async (request, response) => {
     const input = contributionSchema.parse(request.body);
     const mission = await missionService.addContribution(request.params.id, input);
     response.status(201).json({ mission, contribution: mission.contributions.at(-1) });
   }));
 
-  router.post("/:id/resolve", asyncHandler(async (request, response) => {
+  router.post("/:id/resolve", requireAdminApiKey, asyncHandler(async (request, response) => {
     const input = resolveMissionSchema.parse(request.body);
     const result = await missionService.resolveMission(request.params.id, input);
     response.json(result);
   }));
 
-  router.post("/:id/settle", asyncHandler(async (request, response) => {
+  router.post("/:id/settle", requireAdminApiKey, asyncHandler(async (request, response) => {
     const result = await settlementExecutionService.settleMission(request.params.id);
     response.json(result);
   }));
 
-  router.post("/:id/cancel", asyncHandler(async (request, response) => {
+  router.post("/:id/cancel", requireAdminApiKey, asyncHandler(async (request, response) => {
     const result = await settlementExecutionService.cancelMission(request.params.id);
     response.json(result);
   }));
 
-  router.post("/:id/submit-paid", asyncHandler(async (request, response) => {
+  router.post("/:id/submit-paid", requireAdminApiKey, asyncHandler(async (request, response) => {
     const input = contributionSchema.parse(request.body);
     const paymentHeader = request.header("x-payment-proof");
 
