@@ -1,4 +1,8 @@
 services:
+  - type: static
+    name: poc-workflow-docs
+    autoDeploy: true
+    publishPath: docs
   - type: web
     name: poc-demo
     runtime: docker
