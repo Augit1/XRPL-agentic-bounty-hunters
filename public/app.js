@@ -81,6 +81,7 @@ const elements = {
   prodFeePreview: document.getElementById("prod-fee-preview"),
   prodClarifyMission: document.getElementById("prod-clarify-mission"),
   prodClarification: document.getElementById("prod-clarification"),
+  prodClarificationEcho: document.getElementById("prod-clarification-echo"),
   prodStatus: document.getElementById("prod-status"),
   prodMissionList: document.getElementById("prod-mission-list"),
   prodDetailTitle: document.getElementById("prod-detail-title"),
@@ -384,6 +385,30 @@ function getProductionMissionDraftInput() {
   };
 }
 
+function validateProductionMissionDraftInput(input = getProductionMissionDraftInput()) {
+  if (!input.companyWallet) {
+    throw new Error("Add the company wallet that should fund the mission budget.");
+  }
+
+  if (!input.title) {
+    throw new Error("Add a short mission title before continuing.");
+  }
+
+  if (!input.problemStatement) {
+    throw new Error("Describe the real problem you want the platform to solve.");
+  }
+
+  if (!/^\d+$/.test(input.budgetDrops)) {
+    throw new Error("Budget must be a whole number of XRPL drops.");
+  }
+
+  if (BigInt(input.budgetDrops) === 0n) {
+    throw new Error("Budget must be greater than zero.");
+  }
+
+  return input;
+}
+
 function getProductionClarificationSignature(input = getProductionMissionDraftInput()) {
   return [input.title, input.problemStatement, input.budgetDrops, input.companyWallet].join("::");
 }
@@ -440,6 +465,55 @@ function hideProdStatus() {
   elements.prodStatus.textContent = "";
 }
 
+function renderClarificationEcho(clarification) {
+  if (!elements.prodClarificationEcho) {
+    return;
+  }
+
+  if (!clarification) {
+    elements.prodClarificationEcho.innerHTML =
+      '<div class="empty-state">Run platform clarification or create a mission draft to see the structured brief.</div>';
+    return;
+  }
+
+  const objective = clarification.structuredMission?.objective || "No structured objective yet.";
+  const outputs = (clarification.structuredMission?.expectedOutputs || [])
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
+
+  elements.prodClarificationEcho.innerHTML = `
+    <div class="summary-card">
+      <strong>Structured objective</strong>
+      <p class="list-copy">${escapeHtml(objective)}</p>
+    </div>
+    <div class="summary-card">
+      <strong>Expected outputs</strong>
+      <ul class="flat-list">${outputs}</ul>
+    </div>
+  `;
+}
+
+function renderMissionEchoFromMission(mission) {
+  if (!elements.prodClarificationEcho || !mission) {
+    return;
+  }
+
+  elements.prodClarificationEcho.innerHTML = `
+    <div class="summary-card">
+      <strong>Structured mission</strong>
+      <p class="list-copy">${escapeHtml(mission.problemStatement)}</p>
+    </div>
+    <div class="summary-card">
+      <strong>Mission economics</strong>
+      <div class="summary-meta">
+        <span>Total budget: ${escapeHtml(mission.budgetDrops)} drops</span>
+        <span>Platform fee: ${escapeHtml(calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0")} drops</span>
+        <span>Status: ${escapeHtml(missionStatusLabel(mission))}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderClarification(clarification) {
   if (!elements.prodClarification) {
     return;
@@ -486,6 +560,14 @@ function renderClarification(clarification) {
       ${escapeHtml(clarification.proposedEconomics?.contributorPoolDrops || "-")} drops for contributors.
     </p>
   `;
+  renderClarificationEcho(clarification);
+}
+
+function resetProductionClarification() {
+  state.productionClarification = null;
+  state.productionClarificationSignature = "";
+  renderClarification(null);
+  renderClarificationEcho(null);
 }
 
 function applyAppMode() {
@@ -761,6 +843,9 @@ function renderProductionSummary() {
       '<div class="empty-state">Once the platform resolves the mission, payout weights and fee breakdowns will appear here.</div>';
     elements.prodTransactions.innerHTML =
       '<div class="empty-state">XRPL transaction hashes will appear after funding and settlement.</div>';
+    if (!state.productionClarification) {
+      renderClarificationEcho(null);
+    }
     return;
   }
 
@@ -770,7 +855,7 @@ function renderProductionSummary() {
   elements.prodDetailProblem.textContent = mission.problemStatement;
   elements.prodBudgetMetric.textContent = `${mission.budgetDrops} drops`;
   elements.prodFeeMetric.textContent = `${calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"} drops`;
-  elements.prodQualifiedMetric.textContent = String(mission.contributions.filter((item) => item.qualifies).length);
+  elements.prodQualifiedMetric.textContent = String(mission.contributions.length);
   elements.prodTransactionsMetric.textContent = String(mission.settlementTransactions?.length || 0);
 
   const timelineSteps = ["draft", "funded", "open", "resolved", "paid"];
@@ -833,6 +918,10 @@ function renderProductionSummary() {
     elements.prodTransactions.innerHTML =
       '<div class="empty-state">Funding and settlement hashes will appear here after execution.</div>';
   }
+
+  if (!productionClarificationIsFresh()) {
+    renderMissionEchoFromMission(mission);
+  }
 }
 
 function renderAll() {
@@ -885,7 +974,7 @@ async function refreshMissions() {
 }
 
 async function clarifyProductionMission() {
-  const input = getProductionMissionDraftInput();
+  const input = validateProductionMissionDraftInput();
   const result = await api("/missions/intake/clarify", {
     method: "POST",
     body: JSON.stringify(input)
@@ -973,7 +1062,7 @@ async function createMission(inputOverrides = {}) {
 }
 
 async function createProductionMission() {
-  const input = getProductionMissionDraftInput();
+  const input = validateProductionMissionDraftInput();
   const result = await api("/missions/intake", {
     method: "POST",
     body: JSON.stringify(input)
@@ -1297,6 +1386,17 @@ function attachListeners() {
 
   elements.prodBudget?.addEventListener("input", () => {
     setFeePreviewFromBudget();
+    if (!productionClarificationIsFresh() && state.productionClarification) {
+      resetProductionClarification();
+    }
+  });
+
+  [elements.prodCompanyWallet, elements.prodTitle, elements.prodProblemStatement].forEach((input) => {
+    input?.addEventListener("input", () => {
+      if (!productionClarificationIsFresh() && state.productionClarification) {
+        resetProductionClarification();
+      }
+    });
   });
 
   elements.prodClarifyMission?.addEventListener("click", async (event) => {

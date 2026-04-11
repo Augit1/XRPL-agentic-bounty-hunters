@@ -446,6 +446,22 @@ h4 {
   gap: 24px;
 }
 
+.production-layout {
+  grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.production-main-column,
+.production-form-panel {
+  gap: 24px;
+}
+
+.production-strip span {
+  min-height: 58px;
+  display: grid;
+  align-items: center;
+}
+
 .stack-column {
   align-content: start;
 }
@@ -514,6 +530,10 @@ h4 {
 
 .status-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.production-status-grid {
+  gap: 18px;
 }
 
 .status-card strong {
@@ -625,6 +645,61 @@ h4 {
 
 .data-block {
   margin-top: 22px;
+}
+
+.process-row {
+  align-items: stretch;
+}
+
+.process-row strong {
+  display: block;
+}
+
+.operator-drawer {
+  padding: 0;
+  overflow: hidden;
+}
+
+.operator-drawer summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 24px 26px;
+  font-weight: 700;
+}
+
+.operator-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.operator-tools {
+  display: grid;
+  gap: 18px;
+  padding: 0 26px 26px;
+}
+
+.operator-button-row {
+  align-items: stretch;
+}
+
+.production-detail-grid {
+  align-items: start;
+}
+
+.production-summary-panel .hero-text {
+  max-width: 70ch;
+}
+
+.mission-form-panel textarea {
+  min-height: 176px;
+}
+
+.mission-list-item {
+  transform: none;
+}
+
+.mission-list-item:hover {
+  transform: none;
+  border-color: color-mix(in srgb, var(--accent-2) 32%, var(--line));
 }
 
 .mission-list-item {

@@ -210,37 +210,29 @@
             <p class="eyebrow">Production Surface</p>
             <h2>Company mission workspace</h2>
             <p class="section-copy">
-              Submit a real problem, lock the budget, and track how agent contributions turn into a final settlement.
+              Submit a real problem, let the platform structure it into a mission, and track how agent contributions
+              turn into a final escrow-backed settlement.
             </p>
+          </div>
+          <div class="scenario-strip production-strip">
+            <span>1. Describe the business problem</span>
+            <span>2. Review platform clarification</span>
+            <span>3. Create the mission draft</span>
+            <span>4. Platform locks escrow and runs settlement</span>
           </div>
         </section>
 
         <section class="production-layout">
           <aside class="stack-column">
-            <article class="panel control-panel compact-panel">
-              <div class="panel-header">
-                <h3>Operator tools</h3>
-                <span class="pill muted">Optional</span>
-              </div>
-              <p class="helper-copy">
-                The admin key is only for platform-controlled actions like escrow funding and settlement. Company
-                problem intake below works without it.
-              </p>
-              <label>
-                Admin API key
-                <input id="prod-api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
-              </label>
-              <div class="button-row">
-                <button id="prod-save-api-key" type="button">Save key</button>
-                <button id="prod-generate-api-key" type="button" class="secondary-button">Generate key</button>
-              </div>
-            </article>
-
-            <article class="panel mission-form-panel">
+            <article class="panel mission-form-panel production-form-panel">
               <div class="panel-header">
                 <h3>Submit a problem</h3>
                 <span class="micro-label">Company intake</span>
               </div>
+              <p class="helper-copy">
+                This is the company-facing entry point. You describe the real problem, the platform agent structures
+                it, and the platform later handles escrow locking and settlement.
+              </p>
               <label>
                 Company wallet
                 <input id="prod-company-wallet" type="text" placeholder="r..." />
@@ -264,13 +256,12 @@
                 <div class="metric-inline">
                   <span class="meta-label">Platform fee</span>
                   <strong id="prod-fee-preview">100000 drops fee (10% of 1000000 drops)</strong>
+                  <span class="helper-copy compact-copy">The platform fee is fixed by the protocol and applied automatically.</span>
                 </div>
               </div>
               <div class="button-stack">
-                <button id="prod-clarify-mission" type="button" class="secondary-button">Run platform clarification</button>
+                <button id="prod-clarify-mission" type="button" class="secondary-button">Preview platform clarification</button>
                 <button id="prod-create-mission" type="button">Create mission draft</button>
-                <button id="prod-fund-mission" type="button" class="secondary-button">Operator locks XRPL escrow</button>
-                <button id="prod-refresh" type="button" class="secondary-button">Refresh mission data</button>
               </div>
               <div id="prod-status" class="notice-banner hidden"></div>
               <div id="prod-clarification" class="clarification-panel hidden"></div>
@@ -278,36 +269,73 @@
 
             <article class="panel">
               <div class="panel-header">
-                <h3>Mission list</h3>
-                <span class="micro-label">Active and resolved missions</span>
+                <h3>What happens next</h3>
+                <span class="micro-label">Company view</span>
               </div>
-              <div id="prod-mission-list" class="mission-list"></div>
+              <div class="data-list">
+                <div class="summary-row process-row">
+                  <div>
+                    <strong>Platform agent clarifies the mission</strong>
+                    <p class="list-copy">The platform reframes the problem, expected outputs, and success criteria before publication.</p>
+                  </div>
+                </div>
+                <div class="summary-row process-row">
+                  <div>
+                    <strong>Budget gets locked in XRPL escrow</strong>
+                    <p class="list-copy">Once approved, the platform locks the mission budget and opens the mission to contributors.</p>
+                  </div>
+                </div>
+                <div class="summary-row process-row">
+                  <div>
+                    <strong>Contributions and outcomes remain visible</strong>
+                    <p class="list-copy">You can follow mission status, contribution value, and settlement evidence from the workspace.</p>
+                  </div>
+                </div>
+              </div>
             </article>
+
+            <details class="raw-dump operator-drawer">
+              <summary>Operator controls</summary>
+              <div class="operator-tools">
+                <p class="helper-copy">
+                  The admin key is only for platform-controlled actions like escrow funding and settlement.
+                </p>
+                <label>
+                  Admin API key
+                  <input id="prod-api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
+                </label>
+                <div class="button-row operator-button-row">
+                  <button id="prod-save-api-key" type="button">Save operator key</button>
+                  <button id="prod-fund-mission" type="button" class="secondary-button">Lock XRPL escrow</button>
+                </div>
+                <button id="prod-refresh" type="button" class="secondary-button wide-button">Refresh mission data</button>
+              </div>
+            </details>
           </aside>
 
-          <section class="stack-column">
-            <article class="panel">
+          <section class="stack-column production-main-column">
+            <article class="panel production-summary-panel">
               <div class="panel-header">
                 <div>
-                  <h3 id="prod-detail-title">Select a mission</h3>
-                  <p id="prod-detail-status" class="section-copy compact-copy">No mission selected.</p>
+                  <h3 id="prod-detail-title">No mission drafted yet</h3>
+                  <p id="prod-detail-status" class="section-copy compact-copy">Submit a problem to create the first mission draft.</p>
                 </div>
                 <span class="pill muted" id="prod-detail-status-pill">No mission</span>
               </div>
               <p id="prod-detail-problem" class="hero-text compact-copy">
-                Choose a mission from the list or create a new one to see budget, contributions, and payout outcomes.
+                Your selected mission will appear here with budget, contribution activity, and XRPL settlement status.
               </p>
-              <div class="status-grid">
+              <div class="status-grid production-status-grid">
                 <div class="status-card">
                   <span class="meta-label">Budget</span>
                   <strong id="prod-budget-metric">-</strong>
                 </div>
                 <div class="status-card">
-                  <span class="meta-label">Fee</span>
+                  <span class="meta-label">Platform fee</span>
                   <strong id="prod-fee-metric">-</strong>
                 </div>
                 <div class="status-card">
-                  <span class="meta-label">Qualified agents</span>
+                  <span class="meta-label">Contributions</span>
                   <strong id="prod-qualified-metric">-</strong>
                 </div>
                 <div class="status-card">
@@ -318,15 +346,25 @@
               <div id="prod-timeline" class="timeline-strip"></div>
             </article>
 
-            <div class="detail-grid">
+            <div class="detail-grid production-detail-grid">
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Your missions</h3>
+                  <span class="micro-label">Active and resolved missions</span>
+                </div>
+                <div id="prod-mission-list" class="mission-list"></div>
+              </article>
+
               <article class="panel">
                 <div class="panel-header">
                   <h3>Contribution board</h3>
-                  <span class="micro-label">Solutions and weights</span>
+                  <span class="micro-label">Solutions and attribution</span>
                 </div>
                 <div id="prod-contributions" class="data-list"></div>
               </article>
+            </div>
 
+            <div class="detail-grid production-detail-grid">
               <article class="panel">
                 <div class="panel-header">
                   <h3>Settlement and evidence</h3>
@@ -336,6 +374,16 @@
                 <div class="data-block">
                   <h4>Transaction trail</h4>
                   <div id="prod-transactions" class="data-list"></div>
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-header">
+                  <h3>Mission explanation</h3>
+                  <span class="micro-label">Platform framing</span>
+                </div>
+                <div id="prod-clarification-echo" class="data-list">
+                  <div class="empty-state">Run platform clarification or create a mission draft to see the structured brief.</div>
                 </div>
               </article>
             </div>
