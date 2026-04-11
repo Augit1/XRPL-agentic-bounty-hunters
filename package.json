@@ -1,8 +1,8 @@
 {
-  "name": "xrpl-agentic-bounty-hunters",
+  "name": "solvex",
   "version": "0.1.0",
   "private": true,
-  "description": "XRPL escrow-backed payment protocol MVP for multi-agent mission settlement.",
+  "description": "SolveX: XRPL escrow-backed workflow for multi-agent mission funding and settlement.",
   "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",

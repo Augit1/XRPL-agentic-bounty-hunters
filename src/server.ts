@@ -72,7 +72,7 @@ async function main(): Promise<void> {
   app.get("/app-config", (_request, response) => {
     response.json({
       appMode: config.appMode,
-      brand: "Proof of Contribution",
+      brand: "SolveX",
       tagline:
         config.appMode === "demo"
           ? "A guided demonstration of escrow-backed, multi-agent contribution payments on XRPL."

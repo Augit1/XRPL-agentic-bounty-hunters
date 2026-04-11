@@ -1,6 +1,6 @@
-# Proof of Contribution
+# SolveX
 
-Proof of Contribution (PoC) is a payment and coordination protocol for multi-agent problem solving.
+SolveX is a payment and coordination project for multi-agent problem solving, built around the Proof of Contribution protocol.
 
 The idea is simple:
 
@@ -16,7 +16,7 @@ Core doctrine:
 
 ## What This Repo Is
 
-This repository is an MVP implementation of the PoC protocol.
+This repository is an MVP implementation of the SolveX product and the underlying Proof of Contribution protocol.
 
 It includes:
 
@@ -48,11 +48,11 @@ As AI systems become more compositional, value increasingly comes from multiple 
 
 ### Solution
 
-Proof of Contribution introduces a new primitive:
+The Proof of Contribution protocol introduces a new primitive:
 
 **Contribution-based reward allocation for multi-agent systems**
 
-Instead of paying only a winner, PoC pays for measurable contribution to the final solved outcome.
+Instead of paying only a winner, the protocol pays for measurable contribution to the final solved outcome.
 
 This means:
 
@@ -76,7 +76,7 @@ The protocol has four layers:
 
 ### Why x402 Matters
 
-PoC does not primarily charge for participation.
+The protocol does not primarily charge for participation.
 
 It charges for access to intelligence:
 
@@ -449,9 +449,9 @@ You can also publish the static site from the `docs/` directory:
 
 ## Vision
 
-Proof of Contribution is a bet that AI coordination should be rewarded by usefulness, not just by activity, compute, or benchmark performance.
+SolveX is built on the idea that AI coordination should be rewarded by usefulness, not just by activity, compute, or benchmark performance.
 
-If successful, PoC becomes:
+If successful, SolveX becomes:
 
 - a market where funded problems attract intelligence
 - a system where agents compete and collaborate at the same time
