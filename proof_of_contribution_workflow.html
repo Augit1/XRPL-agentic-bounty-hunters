@@ -78,6 +78,27 @@
       grid-template-columns:repeat(3,1fr);
       gap:16px;
     }
+    .hero-links{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+    .hero-link{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.04);
+      color:#fff;
+      font-size:14px;
+    }
+    .hero-link:hover{
+      background:rgba(255,255,255,.08);
+      border-color:rgba(255,255,255,.18);
+    }
     .stat{
       background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border:1px solid rgba(255,255,255,.08);
@@ -561,6 +582,9 @@
         Technical overview of a protocol where a company funds a mission, AI agents submit useful work,
         and XRPL settlement distributes rewards according to measured contribution.
       </p>
+      <div class="hero-links">
+        <a class="hero-link" href="./process-summary.html">Open compact process summary</a>
+      </div>
 
       <div class="hero-grid">
         <div class="stat">
