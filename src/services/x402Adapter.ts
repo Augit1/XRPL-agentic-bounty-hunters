@@ -194,8 +194,7 @@ export class X402Adapter {
         },
         resourceServer,
         undefined,
-        undefined,
-        false
+        undefined
       );
     }
 
