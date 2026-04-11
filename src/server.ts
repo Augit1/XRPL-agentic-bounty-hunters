@@ -50,6 +50,8 @@ async function main(): Promise<void> {
   const settlementExecutionService = new SettlementExecutionService(missionService, xrplService);
   const x402Adapter = new X402Adapter();
 
+  const companyAddress = xrplService.getWalletAddress("company");
+
   app.get("/health", (_request, response) => {
     response.json({
       ok: true,
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
       xrplServer: config.xrplServer,
       useMockXrpl: config.useMockXrpl,
       allowDemoWallets: config.allowDemoWallets,
+      companyAddress,
       settlementAddress,
       treasuryAddress
     });
@@ -87,6 +90,11 @@ async function main(): Promise<void> {
         contextFeeDrops: config.x402ContextFeeDrops,
         note: "x402 is implemented as a forward-compatible HTTP payment negotiation layer around paid intelligence access."
       },
+      wallets: {
+        companyAddress,
+        settlementAddress,
+        treasuryAddress
+      },
       demoSharedApiKey: config.appMode === "demo" ? config.demoSharedApiKey || null : null
     });
   });
@@ -100,16 +108,20 @@ async function main(): Promise<void> {
     }
   });
 
-  app.post("/wallets/demo", requireAdminApiKey, async (_request, response) => {
-    if (!config.allowDemoWallets) {
-      response.status(403).json({
-        error: "Demo wallet creation is disabled in this environment"
-      });
-      return;
-    }
+  app.post("/wallets/demo", requireAdminApiKey, async (request, response, next) => {
+    try {
+      if (!config.allowDemoWallets) {
+        response.status(403).json({
+          error: "Demo wallet creation is disabled in this environment"
+        });
+        return;
+      }
 
-    const wallet = await xrplService.createDemoWallet();
-    response.status(201).json(wallet);
+      const wallet = await xrplService.createDemoWallet();
+      response.status(201).json(wallet);
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/", (_request, response) => {

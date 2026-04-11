@@ -80,11 +80,17 @@ export class XrplService {
       throw new Error("XRPL client unavailable");
     }
 
-    const fundedWallet = await client.fundWallet();
-    return {
-      address: fundedWallet.wallet.address,
-      seed: fundedWallet.wallet.seed!
-    };
+    try {
+      const fundedWallet = await client.fundWallet();
+      return {
+        address: fundedWallet.wallet.address,
+        seed: fundedWallet.wallet.seed!
+      };
+    } catch (error) {
+      throw new Error(
+        "XRPL demo wallet funding failed. Hosted demos should use pre-funded configured wallets instead of relying on the faucet."
+      );
+    }
   }
 
   async createEscrow(params: {

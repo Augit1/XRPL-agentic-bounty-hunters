@@ -59,6 +59,7 @@ const elements = {
   apiKeyInput: document.getElementById("api-key-input"),
   prodApiKeyInput: document.getElementById("prod-api-key-input"),
   demoKeyHelper: document.getElementById("demo-key-helper"),
+  demoWalletHelper: document.getElementById("demo-wallet-helper"),
   selectedMissionPill: document.getElementById("selected-mission-pill"),
   missionJson: document.getElementById("mission-json"),
   queryJson: document.getElementById("query-json"),
@@ -72,6 +73,7 @@ const elements = {
   metricContributions: document.getElementById("metric-contributions"),
   metricTransactions: document.getElementById("metric-transactions"),
   prodCompanyWallet: document.getElementById("prod-company-wallet"),
+  prodWalletHint: document.getElementById("prod-wallet-hint"),
   prodTitle: document.getElementById("prod-title"),
   prodProblemStatement: document.getElementById("prod-problem-statement"),
   prodBudget: document.getElementById("prod-budget"),
@@ -218,6 +220,23 @@ function applyAppMode() {
     elements.heroText.textContent =
       "Submit real problems, lock budgets with XRPL escrow, and track how useful agent contributions translate into outcomes and payouts.";
   }
+}
+
+function usingHostedDemoWallets() {
+  return (
+    state.appConfig?.appMode === "demo" &&
+    state.health &&
+    !state.health.useMockXrpl &&
+    Boolean(state.health.companyAddress)
+  );
+}
+
+function getHostedDemoContributionWallets() {
+  if (!state.health) {
+    return [];
+  }
+
+  return [state.health.companyAddress, state.health.treasuryAddress, state.health.settlementAddress].filter(Boolean);
 }
 
 function logActivity(step, detail, payload) {
@@ -574,6 +593,11 @@ async function refreshMissions() {
 }
 
 async function ensureContributionWallets() {
+  if (usingHostedDemoWallets()) {
+    state.contributionWallets = getHostedDemoContributionWallets();
+    return;
+  }
+
   while (state.contributionWallets.length < DEMO_CONFIG.contributions.length) {
     const wallet = await api("/wallets/demo", { method: "POST", body: "{}" });
     state.contributionWallets.push(wallet.address);
@@ -581,6 +605,22 @@ async function ensureContributionWallets() {
 }
 
 async function generateCompanyWallet() {
+  if (usingHostedDemoWallets()) {
+    const companyAddress = state.health.companyAddress;
+    state.companyWallet = companyAddress;
+
+    if (elements.prodCompanyWallet) {
+      elements.prodCompanyWallet.value = companyAddress;
+    }
+
+    logActivity(
+      "1. Company wallet prepared",
+      "Using the hosted demo company wallet that is already funded on XRPL testnet for a stable walkthrough.",
+      { address: companyAddress, source: "hosted-demo-wallet" }
+    );
+    return { address: companyAddress };
+  }
+
   const wallet = await api("/wallets/demo", { method: "POST", body: "{}" });
   state.companyWallet = wallet.address;
 
@@ -950,9 +990,25 @@ async function boot() {
     if (elements.prodCompanyWallet && state.companyWallet) {
       elements.prodCompanyWallet.value = state.companyWallet;
     }
+    if (elements.prodWalletHint && state.appConfig?.appMode === "production") {
+      elements.prodWalletHint.textContent = state.health?.useMockXrpl
+        ? "Use a company wallet for the mission. In local mock mode you can still test quickly."
+        : "Use the funded company wallet that should actually lock the escrow budget on XRPL.";
+    }
     if (state.appConfig?.demoSharedApiKey && elements.demoKeyHelper) {
       elements.demoKeyHelper.textContent =
         "A shared demo key is preloaded for this site so judges can test the flow without extra setup.";
+    }
+    if (elements.demoWalletHelper) {
+      elements.demoWalletHelper.textContent = usingHostedDemoWallets()
+        ? "This hosted demo uses pre-funded XRPL testnet wallets so the flow stays stable even if faucet funding is unavailable."
+        : "This environment can generate fresh demo wallets when needed.";
+    }
+    const demoWalletButton = document.getElementById("generate-company-wallet");
+    if (demoWalletButton) {
+      demoWalletButton.textContent = usingHostedDemoWallets()
+        ? "1. Use hosted company wallet"
+        : "1. Generate company wallet";
     }
     if (state.appConfig?.appMode === "demo") {
       logActivity(

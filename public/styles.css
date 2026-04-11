@@ -59,6 +59,7 @@ body {
   transition:
     background 200ms ease,
     color 200ms ease;
+  overflow-x: hidden;
 }
 
 button,
@@ -170,6 +171,7 @@ h4 {
   border: 1px solid var(--line);
   background: var(--panel);
   box-shadow: var(--shadow-lg);
+  min-width: 0;
 }
 
 .topbar {
@@ -391,6 +393,7 @@ h4 {
 
 .detail-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
 }
 
 .summary-meta {
@@ -413,6 +416,7 @@ h4 {
   justify-content: space-between;
   gap: 20px;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .list-copy {
@@ -423,10 +427,12 @@ h4 {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
   font-size: 0.82rem;
   line-height: 1.6;
   max-height: 360px;
   overflow: auto;
+  max-width: 100%;
 }
 
 .json-panel.compact {
@@ -453,6 +459,7 @@ h4 {
   background: var(--panel-strong);
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .mission-list-item.active {
@@ -470,6 +477,16 @@ h4 {
 .mission-list-meta {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.activity-entry,
+.summary-card,
+.summary-row,
+.empty-state,
+.panel,
+.status-card,
+.meta-card {
+  overflow: hidden;
 }
 
 @media (max-width: 1220px) {

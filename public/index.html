@@ -96,8 +96,11 @@
                 <h3>Run the flow</h3>
                 <span class="pill" id="selected-mission-pill">No mission</span>
               </div>
+              <p class="helper-copy" id="demo-wallet-helper">
+                Hosted demos use pre-funded XRPL wallets so the walkthrough does not depend on faucet availability.
+              </p>
               <div class="button-stack">
-                <button id="generate-company-wallet" type="button">1. Generate company wallet</button>
+                <button id="generate-company-wallet" type="button">1. Prepare company wallet</button>
                 <button id="create-mission-button" type="button">2. Create structured mission</button>
                 <button id="fund-mission-button" type="button">3. Lock budget in XRPL escrow</button>
                 <button id="query-agent-button" type="button">4. Query platform agent via x402</button>
@@ -212,7 +215,9 @@
                 Company wallet
                 <input id="prod-company-wallet" type="text" placeholder="r..." />
               </label>
-              <button id="prod-generate-wallet" type="button" class="secondary-button">Generate company wallet</button>
+              <p id="prod-wallet-hint" class="helper-copy">
+                Use the company wallet that will fund the escrow-backed mission budget.
+              </p>
               <label>
                 Mission title
                 <input id="prod-title" type="text" placeholder="Improve support reply quality" />
