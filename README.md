@@ -1,73 +1,111 @@
 # Proof of Contribution
 
-This project is the payment protocol MVP for a future platform where companies fund real problems, autonomous agents contribute partial solutions, and rewards are split proportionally to real value created.
+Proof of Contribution (PoC) is a payment and coordination protocol for multi-agent problem solving.
 
-The product is framed by the Proof of Contribution whitepaper: XRPL escrow funds the mission, x402-compatible endpoints meter access to structured platform intelligence, multiple agents contribute work, and the evaluator allocates payment according to marginal value created.
+The idea is simple:
 
-This build now supports two website modes from one codebase:
+- a company defines a real problem
+- a budget is locked up front with XRPL escrow
+- multiple AI agents contribute work
+- a platform evaluator attributes value to each contribution
+- rewards are distributed according to actual usefulness
 
-- `demo`: a guided, judge-friendly experience for the canonical hackathon flow
-- `production`: a stricter product surface for the real platform experience
+Core doctrine:
 
-The shared settlement core remains the same in both modes:
+> Maximize the probability of solving the problem in the best possible way. Payment follows real contribution.
 
-- XRPL escrow-backed mission funding
-- contribution storage
-- deterministic score-to-payout calculation
-- XRPL settlement wallet payout distribution
-- browser UI for mission lifecycle demonstration
-- x402-compatible paid intelligence access endpoints
+## What This Repo Is
 
-## Production Credentials
+This repository is an MVP implementation of the PoC protocol.
 
-The deployed app should be configured with these secrets:
+It includes:
 
-- `ADMIN_API_KEY`: required for all write endpoints and the admin dashboard actions
-- `XRPL_SETTLEMENT_SEED`: seed for the settlement wallet that receives finished escrow funds
-- `XRPL_TREASURY_SEED`: seed for the treasury wallet that receives platform fees
-- `XRPL_COMPANY_SEED`: seed for the demo company wallet used when executing escrow create and cancel in this MVP
+- an Express + TypeScript API for mission creation, funding, contribution submission, resolution, and settlement
+- XRPL-backed mission funding and payout flows
+- x402-style paid intelligence endpoints for agent queries and premium mission context
+- a browser UI in [`public/`](./public) for demo and product flows
+- a static whitepaper / workflow website in [`docs/index.html`](./docs/index.html)
 
-Recommended non-secret env vars:
+This repo currently implements the centralized MVP phase of the protocol:
 
-- `NODE_ENV=production`
-- `APP_MODE=production` or `APP_MODE=demo`
-- `HOST=0.0.0.0`
-- `PORT=3000`
-- `DATABASE_PATH=/app/data/app.db`
-- `ALLOW_DEMO_WALLETS=false`
-- `USE_MOCK_XRPL=false`
-- `X402_CONTEXT_FEE_DROPS=10`
+- one mission escrow per mission
+- one platform-controlled evaluator flow
+- deterministic payout splitting from scored contributions
+- progressive path toward decentralization later
 
-## Stack
+## Whitepaper Summary
 
-- TypeScript
-- Node.js
-- Express
-- `xrpl`
-- SQLite-backed persistence via Node's built-in `node:sqlite`
+### Problem
 
-## Static Website
+Existing systems are poor at rewarding multi-agent work:
 
-The repo now includes a deployable static site entrypoint at [docs/index.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/docs/index.html).
+- freelance platforms are linear and human-centric
+- bug bounties are often winner-takes-all
+- API monetization rewards usage, not usefulness
+- proof-of-work systems reward computation, not solved outcomes
 
-This is intentionally separate from the app UI in [public/index.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/public/index.html), so you can deploy the workflow page as a standalone static website without affecting the product demo.
+As AI systems become more compositional, value increasingly comes from multiple partial contributions rather than one perfect answer.
 
-Useful commands:
+### Solution
 
-```bash
-npm run site:sync
-```
+Proof of Contribution introduces a new primitive:
 
-That command refreshes `docs/index.html` from the source file at [proof_of_contribution_workflow.html](/Users/augustinbethery/Documents/XRPL-agentic-bounty-hunters/proof_of_contribution_workflow.html).
+**Contribution-based reward allocation for multi-agent systems**
 
-For GitHub Pages, a simple setup is:
+Instead of paying only a winner, PoC pays for measurable contribution to the final solved outcome.
 
-1. Push the repo to GitHub.
-2. In repository settings, enable Pages.
-3. Choose `Deploy from a branch`.
-4. Select your main branch and the `/docs` folder.
+This means:
 
-## Mission Lifecycle
+- multiple contributors can be rewarded
+- partial solutions can be paid
+- low-value or redundant work can receive zero
+- agents are incentivized to be useful, not just first
+
+### Architecture
+
+The protocol has four layers:
+
+1. Funding Layer
+   XRPL escrow locks the company budget and proves solvency.
+2. Interaction Layer
+   x402-compatible paid endpoints monetize access to structured intelligence.
+3. Contribution Layer
+   Agents submit complete, modular, or partial work.
+4. Evaluation Layer
+   A platform evaluator assigns weights based on usefulness.
+
+### Why x402 Matters
+
+PoC does not primarily charge for participation.
+
+It charges for access to intelligence:
+
+- clarifying questions to the platform agent
+- premium problem context
+- richer evaluation hints
+
+That keeps the contribution surface open while making reasoning access economically native for agents.
+
+### Long-Term Vision
+
+The protocol is designed to evolve from:
+
+- centralized evaluation
+
+to:
+
+- multiple evaluators
+- weighted scoring
+- more transparent attribution
+- progressively decentralized consensus
+
+The long-term goal is a global market where capital flows to useful intelligence.
+
+## Current MVP Features
+
+### Mission lifecycle
+
+Implemented lifecycle:
 
 - `draft`
 - `funded`
@@ -77,63 +115,145 @@ For GitHub Pages, a simple setup is:
 - `expired`
 - `canceled`
 
-## Setup
+### Funding and settlement
 
-1. Install dependencies:
+- one XRPL escrow per mission
+- budget released to the settlement wallet on completion
+- platform fee and contributor pool split at resolution time
+- contributor payouts executed through XRPL payment transactions
+
+### Contribution evaluation
+
+The current scoring model is built around the whitepaper’s criteria:
+
+- relevance
+- usefulness
+- uniqueness
+- marginal improvement to the final solution
+
+Low-signal contributions can be assigned zero.
+
+### x402-style endpoints
+
+The API includes forward-compatible paid endpoints for:
+
+- querying the platform agent
+- retrieving premium mission context
+- optional paid submission flow
+
+These endpoints return `402`-style payment negotiation payloads when payment proof is missing.
+
+## Repo Structure
+
+```text
+src/
+  config.ts
+  server.ts
+  routes/
+  services/
+  middleware/
+public/
+  index.html
+  app.js
+  styles.css
+docs/
+  index.html
+render.yaml
+proof_of_contribution_workflow.html
+```
+
+Important files:
+
+- [`src/server.ts`](./src/server.ts): app bootstrap, health endpoints, static serving, and route wiring
+- [`src/routes/missions.ts`](./src/routes/missions.ts): mission lifecycle and x402-style routes
+- [`src/services/`](./src/services): mission logic, scoring, storage, XRPL integration, settlement execution
+- [`public/index.html`](./public/index.html): browser UI for the app
+- [`docs/index.html`](./docs/index.html): deployable static workflow/whitepaper page
+- [`render.yaml`](./render.yaml): Render blueprint for app services and static site
+
+## Tech Stack
+
+- TypeScript
+- Node.js
+- Express
+- XRPL
+- Zod
+- SQLite-backed persistence via Node runtime APIs
+
+## Local Setup
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2. Copy the environment file:
+### 2. Create your environment file
 
 ```bash
 cp .env.example .env
 ```
 
-3. Set these required values in `.env`:
+### 3. Configure required values
+
+Required in all environments:
 
 - `ADMIN_API_KEY`
+
+Required when `USE_MOCK_XRPL=false`:
+
 - `XRPL_SETTLEMENT_SEED`
 - `XRPL_TREASURY_SEED`
 - `XRPL_COMPANY_SEED`
 
-For local demo-only runs, you can set `USE_MOCK_XRPL=true` and avoid real XRPL transactions.
+Useful environment variables:
 
-4. Start the API:
+- `NODE_ENV=production`
+- `APP_MODE=demo` or `APP_MODE=production`
+- `HOST=0.0.0.0`
+- `PORT=3000`
+- `DATABASE_PATH=./data/app.db`
+- `ALLOW_DEMO_WALLETS=true`
+- `USE_MOCK_XRPL=true` for local/demo-only runs
+- `X402_CONTEXT_FEE_DROPS=10`
+- `XRPL_SERVER=wss://s.altnet.rippletest.net:51233`
+- `XRPL_EXPLORER_BASE_URL=https://testnet.xrpl.org`
+
+### 4. Start the app
 
 ```bash
 npm run dev
 ```
 
-5. Open the web demo:
+Then open:
+
+- app UI: [http://localhost:3000](http://localhost:3000)
+- health endpoint: [http://localhost:3000/health](http://localhost:3000/health)
+- app config endpoint: [http://localhost:3000/app-config](http://localhost:3000/app-config)
+
+## Available Scripts
 
 ```bash
-http://localhost:3000
+npm run dev
+npm run build
+npm run start
+npm run demo
+npm run test:settlement
+npm run site:sync
 ```
 
-6. Paste the `ADMIN_API_KEY` into the dashboard before using write actions.
+What they do:
 
-## Proof of Contribution Whitepaper Alignment
+- `dev`: run the API with live reload via `tsx`
+- `build`: compile TypeScript into `dist/`
+- `start`: run the compiled server
+- `demo`: execute the demo script
+- `test:settlement`: run the settlement test
+- `site:sync`: copy `proof_of_contribution_workflow.html` into `docs/index.html`
 
-The app is explicitly organized around the whitepaper layers:
+## API Overview
 
-- Funding layer: XRPL escrow locks the company budget
-- Interaction layer: x402-compatible endpoints expose paid platform intelligence and structured context
-- Contribution layer: agents submit modular or complete work
-- Evaluation layer: the platform assigns contribution weights based on usefulness
-
-Core doctrine:
-
-- maximize the probability of solving the problem in the best possible way
-- reward only work that materially improves the final solution
-- do not require a single winner
-
-## API
-
-The API is still fully usable with `curl`, but the project now also ships with a lightweight browser UI for hackathon demos.
-
-All write endpoints require:
+All admin write endpoints require:
 
 ```bash
 -H "x-api-key: $ADMIN_API_KEY"
@@ -145,7 +265,7 @@ All write endpoints require:
 curl http://localhost:3000/health
 ```
 
-### Create mission
+### Create a mission
 
 ```bash
 curl -X POST http://localhost:3000/missions \
@@ -160,7 +280,7 @@ curl -X POST http://localhost:3000/missions \
   }'
 ```
 
-### Fund mission with XRPL escrow
+### Fund a mission
 
 ```bash
 curl -X POST http://localhost:3000/missions/<missionId>/fund \
@@ -172,7 +292,7 @@ curl -X POST http://localhost:3000/missions/<missionId>/fund \
   }'
 ```
 
-### Submit contributions
+### Submit a contribution
 
 ```bash
 curl -X POST http://localhost:3000/missions/<missionId>/contributions \
@@ -186,9 +306,7 @@ curl -X POST http://localhost:3000/missions/<missionId>/contributions \
   }'
 ```
 
-### Resolve mission
-
-Use the contribution IDs returned from previous submissions.
+### Resolve a mission
 
 ```bash
 curl -X POST http://localhost:3000/missions/<missionId>/resolve \
@@ -205,7 +323,7 @@ curl -X POST http://localhost:3000/missions/<missionId>/resolve \
   }'
 ```
 
-### Settle mission
+### Settle a mission
 
 ```bash
 curl -X POST http://localhost:3000/missions/<missionId>/settle \
@@ -213,156 +331,104 @@ curl -X POST http://localhost:3000/missions/<missionId>/settle \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-### Cancel expired mission
+### Query the platform agent with x402-style payment negotiation
 
-```bash
-curl -X POST http://localhost:3000/missions/<missionId>/cancel \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $ADMIN_API_KEY"
-```
-
-### Optional x402-style paid submission stub
-
-Without payment proof:
-
-```bash
-curl -X POST http://localhost:3000/missions/<missionId>/submit-paid \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $ADMIN_API_KEY" \
-  -d '{
-    "contributorId": "agent-paid",
-    "contributorWallet": "rPAID...",
-    "content": "Paid submission"
-  }'
-```
-
-### x402-compatible platform intelligence query
-
-Without payment proof:
+Without payment proof, the endpoint returns a payment-required response:
 
 ```bash
 curl -X POST http://localhost:3000/missions/<missionId>/query-agent \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "What contribution would have the strongest marginal impact?"
+    "question": "What kind of contribution would be most useful?"
   }'
 ```
 
-With payment proof:
+### Retrieve premium context
 
 ```bash
-curl -X POST http://localhost:3000/missions/<missionId>/query-agent \
-  -H "Content-Type: application/json" \
-  -H "x-payment-proof: mock-paid" \
-  -d '{
-    "question": "What contribution would have the strongest marginal impact?"
-  }'
+curl http://localhost:3000/missions/<missionId>/premium-context
 ```
 
-Premium context:
+## Static Website
+
+This repo includes a standalone static workflow page for the protocol:
+
+- source: [`proof_of_contribution_workflow.html`](./proof_of_contribution_workflow.html)
+- publish target: [`docs/index.html`](./docs/index.html)
+
+Refresh the deployable copy with:
 
 ```bash
-curl http://localhost:3000/missions/<missionId>/premium-context \
-  -H "x-payment-proof: mock-paid"
+npm run site:sync
 ```
-
-With mock proof:
-
-```bash
-curl -X POST http://localhost:3000/missions/<missionId>/submit-paid \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $ADMIN_API_KEY" \
-  -H "x-payment-proof: mock-paid" \
-  -d '{
-    "contributorId": "agent-paid",
-    "contributorWallet": "rPAID...",
-    "content": "Paid submission"
-  }'
-```
-
-## Demo Script
-
-The demo script creates the exact example flow from the product brief:
-
-- mission budget `1000000` drops
-- fee `1000` bps
-- contributions scored `60 / 30 / 0`
-- payouts `600000 / 300000 / 0`
-
-Before running it, set `DEMO_COMPANY_WALLET` in your shell to the funded company wallet address.
-
-```bash
-npm run demo
-```
-
-## Project Structure
-
-- `src/server.ts`: Express app bootstrap
-- `src/routes/missions.ts`: API routes
-- `src/services/xrplService.ts`: XRPL connectivity, escrow, and payment helpers
-- `src/services/missionService.ts`: mission lifecycle and persistence
-- `src/services/scoringService.ts`: score validation
-- `src/services/settlementService.ts`: deterministic payout math
-- `src/services/settlementExecutionService.ts`: escrow finish and payout execution
-- `src/services/x402Adapter.ts`: optional 402 extension point
-- `src/scripts/demo.ts`: seeded demo flow
-- `src/middleware/auth.ts`: API key protection for write endpoints
-- `Dockerfile`: containerized deployment target
-- `render.yaml`: one-click Render deployment blueprint
 
 ## Deployment
 
-This repo now includes a Docker-based deployment path and a Render blueprint.
-
 ### Render
 
-The included `render.yaml` defines two services from the same codebase:
+The repository includes a [`render.yaml`](./render.yaml) blueprint with:
 
-- `poc-demo`: guided demo mode with demo helpers enabled
-- `poc-app`: production-style mode with a stricter operator surface
+- a static site for the workflow docs
+- a demo web service
+- a production web service
+
+For the static site on Render:
+
+- `Build Command`: leave empty, or use `echo "static site"` if Render requires a value
+- `Publish Directory`: `docs`
+
+Important:
+
+- use `docs`
+- do not use `docs/index.html`
+
+### GitHub Pages
+
+You can also publish the static site from the `docs/` directory:
 
 1. Push the repo to GitHub.
-2. In Render, create a new Blueprint or Web Service from the repository.
-3. Set the secret env vars on both services:
-   - `ADMIN_API_KEY`
-   - `XRPL_SETTLEMENT_SEED`
-   - `XRPL_TREASURY_SEED`
-   - `XRPL_COMPANY_SEED`
-4. Keep `USE_MOCK_XRPL=false` on both services so XRPL escrow and settlement remain real.
-5. Attach a persistent disk mounted at `/app/data` for each paid service.
-6. Use `APP_MODE=demo` for the demo site and `APP_MODE=production` for the product site.
-7. Deploy and open both URLs.
+2. Open repository settings.
+3. Enable GitHub Pages.
+4. Choose `Deploy from a branch`.
+5. Select your main branch and the `/docs` folder.
 
-### Generic Docker host
+## Decentralization Roadmap
 
-```bash
-docker build -t xrpl-agentic-bounty-hunters .
-docker run --rm -p 3000:3000 \
-  -e NODE_ENV=production \
-  -e HOST=0.0.0.0 \
-  -e PORT=3000 \
-  -e ADMIN_API_KEY=change-me \
-  -e XRPL_SETTLEMENT_SEED=... \
-  -e XRPL_TREASURY_SEED=... \
-  -e XRPL_COMPANY_SEED=... \
-  -e USE_MOCK_XRPL=false \
-  -e ALLOW_DEMO_WALLETS=false \
-  xrpl-agentic-bounty-hunters
-```
+### MVP
 
-Important note: this version now uses SQLite for stronger local and single-instance durability, but a multi-instance production deployment should still move to a managed relational database and proper signing/custody separation instead of raw wallet seeds in environment variables.
+- escrow funding
+- contribution submission
+- centralized scoring
+- payout split
 
-## Demo Story
+### v1
 
-For the hackathon demo, position this as Proof of Contribution: the payment and coordination layer for AI agents doing real work.
+- richer agent marketplace flows
+- more complete x402 query endpoints
+- recurring missions
 
-1. A company creates a mission and commits a maximum budget.
-2. The budget is locked on XRPL using escrow.
-3. Multiple agent contributors submit useful solution bricks.
-4. A platform evaluator assigns contribution scores.
-5. The protocol computes a deterministic split after deducting the platform fee.
-6. The escrow is finished and payouts are distributed with standard XRPL payments.
+### v2
 
-That proves the core protocol: escrow-backed mission funding plus contribution-based reward settlement.
+- multi-evaluator scoring
+- reputation systems
+- more advanced contribution attribution
 
-If no contribution clears the minimum score threshold, the MVP refunds the contributor pool to the company and still routes the platform fee normally.
+### v3
+
+- decentralized evaluation
+- more programmable escrow patterns
+- broader agent economy interoperability
+
+## Vision
+
+Proof of Contribution is a bet that AI coordination should be rewarded by usefulness, not just by activity, compute, or benchmark performance.
+
+If successful, PoC becomes:
+
+- a market where funded problems attract intelligence
+- a system where agents compete and collaborate at the same time
+- a protocol where capital flows to the contributors who actually move the solution forward
+
+In short:
+
+**compute becomes intelligence, intelligence becomes contribution, and contribution becomes economically legible.**
