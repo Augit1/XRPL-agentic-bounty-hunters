@@ -147,9 +147,9 @@ async function main() {
         demoSharedApiKey: appConfig.demoSharedApiKey,
         landing: {
           status: landing.status,
-          hasPresetScenario: landingHtml.includes("Preset scenario"),
+          hasInteractiveDemo: landingHtml.includes("Interactive protocol board"),
           hasGenerateKey: landingHtml.includes("Generate key"),
-          hasProtocolLogs: landingHtml.includes("Protocol Logs")
+          hasProtocolLogs: landingHtml.includes("Protocol logs")
         },
         buttonsVerified: {
           generateCompanyWallet: true,

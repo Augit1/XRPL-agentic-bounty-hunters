@@ -26,26 +26,39 @@ const DEMO_CONFIG = {
   scores: [60, 30, 0]
 };
 
+const THEME_STORAGE_KEY = "pocTheme";
+const API_KEY_STORAGE_KEY = "adminApiKey";
+
 const state = {
   appConfig: null,
   health: null,
   missions: [],
   selectedMissionId: null,
   activity: [],
-  apiKey: window.localStorage.getItem("adminApiKey") || "",
+  apiKey: window.localStorage.getItem(API_KEY_STORAGE_KEY) || "",
   paymentProof: "mock-paid",
   companyWallet: "",
   contributionWallets: [],
-  lastQueryResult: null
+  lastQueryResult: null,
+  theme: window.localStorage.getItem(THEME_STORAGE_KEY) || "dark"
 };
 
 const elements = {
+  body: document.body,
+  themeToggle: document.getElementById("theme-toggle"),
   modePill: document.getElementById("mode-pill"),
   xrplMode: document.getElementById("xrpl-mode"),
   healthStatus: document.getElementById("health-status"),
   appMode: document.getElementById("app-mode"),
   settlementAddress: document.getElementById("settlement-address"),
   treasuryAddress: document.getElementById("treasury-address"),
+  heroTitle: document.getElementById("hero-title"),
+  heroText: document.getElementById("hero-text"),
+  demoApp: document.getElementById("demo-app"),
+  productionApp: document.getElementById("production-app"),
+  apiKeyInput: document.getElementById("api-key-input"),
+  prodApiKeyInput: document.getElementById("prod-api-key-input"),
+  demoKeyHelper: document.getElementById("demo-key-helper"),
   selectedMissionPill: document.getElementById("selected-mission-pill"),
   missionJson: document.getElementById("mission-json"),
   queryJson: document.getElementById("query-json"),
@@ -58,9 +71,44 @@ const elements = {
   metricFee: document.getElementById("metric-fee"),
   metricContributions: document.getElementById("metric-contributions"),
   metricTransactions: document.getElementById("metric-transactions"),
-  apiKeyInput: document.getElementById("api-key-input"),
-  demoKeyHelper: document.getElementById("demo-key-helper")
+  prodCompanyWallet: document.getElementById("prod-company-wallet"),
+  prodTitle: document.getElementById("prod-title"),
+  prodProblemStatement: document.getElementById("prod-problem-statement"),
+  prodBudget: document.getElementById("prod-budget"),
+  prodFeeBps: document.getElementById("prod-fee-bps"),
+  prodMissionList: document.getElementById("prod-mission-list"),
+  prodDetailTitle: document.getElementById("prod-detail-title"),
+  prodDetailStatus: document.getElementById("prod-detail-status"),
+  prodDetailStatusPill: document.getElementById("prod-detail-status-pill"),
+  prodDetailProblem: document.getElementById("prod-detail-problem"),
+  prodBudgetMetric: document.getElementById("prod-budget-metric"),
+  prodFeeMetric: document.getElementById("prod-fee-metric"),
+  prodQualifiedMetric: document.getElementById("prod-qualified-metric"),
+  prodTransactionsMetric: document.getElementById("prod-transactions-metric"),
+  prodTimeline: document.getElementById("prod-timeline"),
+  prodContributions: document.getElementById("prod-contributions"),
+  prodResolutionSummary: document.getElementById("prod-resolution-summary"),
+  prodTransactions: document.getElementById("prod-transactions")
 };
+
+function formatErrorPayload(text) {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    const trimmed = text.trim();
+    const excerpt = trimmed.slice(0, 600);
+    return {
+      raw: excerpt,
+      message: trimmed.startsWith("<")
+        ? "The server returned HTML instead of JSON. This usually means the deployment is serving an error page, an old frontend build, or a route fallback."
+        : excerpt
+    };
+  }
+}
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -74,20 +122,7 @@ async function api(path, options = {}) {
   });
 
   const text = await response.text();
-  let body = null;
-
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = {
-        raw: text,
-        message: text.trim().startsWith("<")
-          ? "The server returned HTML instead of JSON. This usually means the deployment is serving an error page or an old build."
-          : text
-      };
-    }
-  }
+  const body = formatErrorPayload(text);
 
   if (!response.ok) {
     const errorMessage =
@@ -101,6 +136,7 @@ async function api(path, options = {}) {
     const error = new Error(errorMessage);
     error.status = response.status;
     error.body = body;
+    error.path = path;
     throw error;
   }
 
@@ -114,8 +150,41 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;");
 }
 
-function selectedMission() {
-  return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
+function truncateValue(value, limit = 260) {
+  const serialized = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  if (!serialized) {
+    return "";
+  }
+
+  return serialized.length > limit ? `${serialized.slice(0, limit)}…` : serialized;
+}
+
+function compactPayload(payload) {
+  if (!payload) {
+    return null;
+  }
+
+  if (typeof payload === "string") {
+    return truncateValue(payload);
+  }
+
+  if (typeof payload === "object") {
+    if ("raw" in payload && typeof payload.raw === "string") {
+      return {
+        ...payload,
+        raw: truncateValue(payload.raw)
+      };
+    }
+
+    return Object.fromEntries(
+      Object.entries(payload).map(([key, value]) => [
+        key,
+        typeof value === "string" ? truncateValue(value, 320) : value
+      ])
+    );
+  }
+
+  return payload;
 }
 
 function generateRandomKey() {
@@ -124,17 +193,48 @@ function generateRandomKey() {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function selectedMission() {
+  return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
+}
+
+function setTheme(theme) {
+  state.theme = theme === "light" ? "light" : "dark";
+  elements.body.dataset.theme = state.theme;
+  window.localStorage.setItem(THEME_STORAGE_KEY, state.theme);
+  elements.themeToggle.textContent = state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+}
+
+function applyAppMode() {
+  const isDemo = state.appConfig?.appMode === "demo";
+  elements.demoApp.classList.toggle("hidden", !isDemo);
+  elements.productionApp.classList.toggle("hidden", isDemo);
+
+  if (isDemo) {
+    elements.heroTitle.textContent = "Interactive Proof of Contribution demo.";
+    elements.heroText.textContent =
+      "Walk through funding, x402 problem clarification, weighted contribution scoring, and real XRPL settlement.";
+  } else {
+    elements.heroTitle.textContent = "Company workspace for AI problem funding.";
+    elements.heroText.textContent =
+      "Submit real problems, lock budgets with XRPL escrow, and track how useful agent contributions translate into outcomes and payouts.";
+  }
+}
+
 function logActivity(step, detail, payload) {
   state.activity.unshift({
     at: new Date().toLocaleTimeString(),
     step,
     detail,
-    payload
+    payload: compactPayload(payload)
   });
-  renderActivity();
+  renderDemoActivity();
 }
 
-function renderActivity() {
+function renderDemoActivity() {
+  if (!elements.activityLog) {
+    return;
+  }
+
   if (!state.activity.length) {
     elements.activityLog.innerHTML = `<div class="empty-state">No protocol events yet. Use the buttons on the left to run the flow.</div>`;
     return;
@@ -147,7 +247,7 @@ function renderActivity() {
           <time>${entry.at}</time>
           <strong>${escapeHtml(entry.step)}</strong>
           <p>${escapeHtml(entry.detail)}</p>
-          ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(JSON.stringify(entry.payload, null, 2))}</pre>` : ""}
+          ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(typeof entry.payload === "string" ? entry.payload : JSON.stringify(entry.payload, null, 2))}</pre>` : ""}
         </article>
       `
     )
@@ -155,8 +255,12 @@ function renderActivity() {
 }
 
 function renderHealth() {
-  if (!state.health) return;
-  elements.modePill.textContent = state.appConfig?.appMode === "demo" ? "Demo mode" : "Production mode";
+  if (!state.health) {
+    return;
+  }
+
+  const isDemo = state.appConfig?.appMode === "demo";
+  elements.modePill.textContent = isDemo ? "Demo mode" : "Production mode";
   elements.xrplMode.textContent = state.health.useMockXrpl ? "Mock XRPL" : "Real XRPL";
   elements.healthStatus.textContent = state.health.ok ? "Live" : "Offline";
   elements.appMode.textContent = state.health.appMode;
@@ -165,6 +269,10 @@ function renderHealth() {
 }
 
 function renderWorkflow() {
+  if (!elements.workflowRail) {
+    return;
+  }
+
   const mission = selectedMission();
   const steps = [
     {
@@ -206,7 +314,7 @@ function renderWorkflow() {
     .join("");
 }
 
-function renderSummary() {
+function renderDemoSummary() {
   const mission = selectedMission();
   elements.selectedMissionPill.textContent = mission ? mission.status : "No mission";
   elements.metricBudget.textContent = mission ? `${mission.budgetDrops} drops` : "-";
@@ -278,11 +386,157 @@ function renderSummary() {
   renderWorkflow();
 }
 
+function missionStatusLabel(mission) {
+  return mission?.status ? mission.status.replaceAll("_", " ") : "No mission";
+}
+
+function renderProductionMissionList() {
+  if (!elements.prodMissionList) {
+    return;
+  }
+
+  if (!state.missions.length) {
+    elements.prodMissionList.innerHTML =
+      '<div class="empty-state">No missions yet. Use the form above to create the first company problem.</div>';
+    return;
+  }
+
+  elements.prodMissionList.innerHTML = state.missions
+    .map(
+      (mission) => `
+        <button
+          type="button"
+          class="mission-list-item ${mission.id === state.selectedMissionId ? "active" : ""}"
+          data-mission-id="${escapeHtml(mission.id)}"
+        >
+          <span class="mission-list-topline">
+            <strong>${escapeHtml(mission.title)}</strong>
+            <span class="pill muted">${escapeHtml(mission.status)}</span>
+          </span>
+          <span class="mission-list-meta">
+            <span>${escapeHtml(mission.budgetDrops)} drops</span>
+            <span>${mission.contributions.length} contributions</span>
+          </span>
+        </button>
+      `
+    )
+    .join("");
+
+  elements.prodMissionList.querySelectorAll("[data-mission-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      state.selectedMissionId = button.getAttribute("data-mission-id");
+      await refreshSelectedMission();
+      renderProductionMissionList();
+    });
+  });
+}
+
+function renderProductionSummary() {
+  const mission = selectedMission();
+
+  if (!mission) {
+    elements.prodDetailTitle.textContent = "Select a mission";
+    elements.prodDetailStatus.textContent = "No mission selected.";
+    elements.prodDetailStatusPill.textContent = "No mission";
+    elements.prodDetailProblem.textContent =
+      "Choose a mission from the list or create a new one to see budget, contributions, and payout outcomes.";
+    elements.prodBudgetMetric.textContent = "-";
+    elements.prodFeeMetric.textContent = "-";
+    elements.prodQualifiedMetric.textContent = "-";
+    elements.prodTransactionsMetric.textContent = "-";
+    elements.prodTimeline.innerHTML = "";
+    elements.prodContributions.innerHTML =
+      '<div class="empty-state">Contributions will appear here as agents submit work.</div>';
+    elements.prodResolutionSummary.innerHTML =
+      '<div class="empty-state">Once the platform resolves the mission, payout weights and fee breakdowns will appear here.</div>';
+    elements.prodTransactions.innerHTML =
+      '<div class="empty-state">XRPL transaction hashes will appear after funding and settlement.</div>';
+    return;
+  }
+
+  elements.prodDetailTitle.textContent = mission.title;
+  elements.prodDetailStatus.textContent = `Mission is currently ${missionStatusLabel(mission)}.`;
+  elements.prodDetailStatusPill.textContent = missionStatusLabel(mission);
+  elements.prodDetailProblem.textContent = mission.problemStatement;
+  elements.prodBudgetMetric.textContent = `${mission.budgetDrops} drops`;
+  elements.prodFeeMetric.textContent = `${mission.feeBps} bps`;
+  elements.prodQualifiedMetric.textContent = String(mission.contributions.filter((item) => item.qualifies).length);
+  elements.prodTransactionsMetric.textContent = String(mission.settlementTransactions?.length || 0);
+
+  const timelineSteps = ["draft", "funded", "open", "resolved", "paid"];
+  const currentIndex = timelineSteps.indexOf(mission.status);
+  elements.prodTimeline.innerHTML = timelineSteps
+    .map((step, index) => `<span class="timeline-chip ${index <= currentIndex ? "active" : ""}">${escapeHtml(step)}</span>`)
+    .join("");
+
+  if (mission.contributions.length) {
+    elements.prodContributions.innerHTML = mission.contributions
+      .map(
+        (contribution) => `
+          <div class="summary-row">
+            <div>
+              <strong>${escapeHtml(contribution.title || contribution.contributorId)}</strong>
+              <p class="list-copy">${escapeHtml(contribution.content)}</p>
+            </div>
+            <div class="summary-meta vertical-meta">
+              <span>Agent: ${escapeHtml(contribution.contributorId)}</span>
+              <span>Score: ${contribution.score ?? 0}</span>
+              <span>Payout: ${contribution.payoutDrops ?? "0"} drops</span>
+            </div>
+          </div>
+        `
+      )
+      .join("");
+  } else {
+    elements.prodContributions.innerHTML =
+      '<div class="empty-state">The mission is open, but no agent contributions have been stored yet.</div>';
+  }
+
+  if (mission.resolution) {
+    elements.prodResolutionSummary.innerHTML = `
+      <div class="summary-card">
+        <div class="summary-meta">
+          <span>Platform fee: ${mission.resolution.platformFeeDrops}</span>
+          <span>Contributor pool: ${mission.resolution.contributorPoolDrops}</span>
+          <span>Threshold: ${mission.resolution.minScoreThreshold}</span>
+        </div>
+      </div>
+    `;
+  } else {
+    elements.prodResolutionSummary.innerHTML =
+      '<div class="empty-state">The mission has not been resolved yet, so contributor weights are still pending.</div>';
+  }
+
+  if (mission.settlementTransactions?.length) {
+    elements.prodTransactions.innerHTML = mission.settlementTransactions
+      .map(
+        (transaction) => `
+          <div class="summary-row">
+            <span>${escapeHtml(transaction.kind)}</span>
+            <span>${escapeHtml(transaction.amountDrops || "-")}</span>
+            <span>${escapeHtml(transaction.txHash)}</span>
+          </div>
+        `
+      )
+      .join("");
+  } else {
+    elements.prodTransactions.innerHTML =
+      '<div class="empty-state">Funding and settlement hashes will appear here after execution.</div>';
+  }
+}
+
+function renderAll() {
+  renderHealth();
+  renderDemoSummary();
+  renderProductionMissionList();
+  renderProductionSummary();
+}
+
 async function loadAppState() {
   state.appConfig = await api("/app-config");
   if (state.appConfig?.demoSharedApiKey && !state.apiKey) {
     state.apiKey = state.appConfig.demoSharedApiKey;
-    window.localStorage.setItem("adminApiKey", state.apiKey);
+    window.localStorage.setItem(API_KEY_STORAGE_KEY, state.apiKey);
   }
   state.health = await api("/health");
   const { missions } = await api("/missions");
@@ -290,13 +544,13 @@ async function loadAppState() {
   if (!state.selectedMissionId && missions.length) {
     state.selectedMissionId = missions[0].id;
   }
-  renderHealth();
-  renderSummary();
+  applyAppMode();
+  renderAll();
 }
 
 async function refreshSelectedMission() {
   if (!state.selectedMissionId) {
-    renderSummary();
+    renderAll();
     return;
   }
 
@@ -307,7 +561,16 @@ async function refreshSelectedMission() {
   } else {
     state.missions.unshift(mission);
   }
-  renderSummary();
+  renderAll();
+}
+
+async function refreshMissions() {
+  const { missions } = await api("/missions");
+  state.missions = missions;
+  if (!state.selectedMissionId && missions.length) {
+    state.selectedMissionId = missions[0].id;
+  }
+  renderAll();
 }
 
 async function ensureContributionWallets() {
@@ -320,33 +583,47 @@ async function ensureContributionWallets() {
 async function generateCompanyWallet() {
   const wallet = await api("/wallets/demo", { method: "POST", body: "{}" });
   state.companyWallet = wallet.address;
+
+  if (elements.prodCompanyWallet) {
+    elements.prodCompanyWallet.value = wallet.address;
+  }
+
   logActivity("1. Company wallet generated", "Created XRPL wallet for the company funding side.", wallet);
+  return wallet;
 }
 
-async function createMission() {
-  if (!state.companyWallet) {
-    await generateCompanyWallet();
+async function createMission(inputOverrides = {}) {
+  const companyWallet = inputOverrides.companyWallet || state.companyWallet || elements.prodCompanyWallet?.value.trim();
+  if (!companyWallet) {
+    const wallet = await generateCompanyWallet();
+    inputOverrides.companyWallet = wallet.address;
   }
+  state.companyWallet = inputOverrides.companyWallet || companyWallet || state.companyWallet;
 
   const { mission } = await api("/missions", {
     method: "POST",
     body: JSON.stringify({
-      title: DEMO_CONFIG.title,
-      problemStatement: DEMO_CONFIG.problemStatement,
-      budgetDrops: DEMO_CONFIG.budgetDrops,
-      feeBps: DEMO_CONFIG.feeBps,
-      companyWallet: state.companyWallet
+      title: inputOverrides.title || DEMO_CONFIG.title,
+      problemStatement: inputOverrides.problemStatement || DEMO_CONFIG.problemStatement,
+      budgetDrops: inputOverrides.budgetDrops || DEMO_CONFIG.budgetDrops,
+      feeBps: Number(inputOverrides.feeBps ?? DEMO_CONFIG.feeBps),
+      companyWallet: inputOverrides.companyWallet || state.companyWallet || elements.prodCompanyWallet?.value.trim()
     })
   });
 
   state.selectedMissionId = mission.id;
   state.missions.unshift(mission);
-  logActivity(
-    "2. Structured mission created",
-    "Platform-side mission structure is ready with budget cap, fee, and problem context.",
-    mission
-  );
-  renderSummary();
+  renderAll();
+
+  if (state.appConfig?.appMode === "demo") {
+    logActivity(
+      "2. Structured mission created",
+      "Platform-side mission structure is ready with budget cap, fee, and problem context.",
+      mission
+    );
+  }
+
+  return mission;
 }
 
 async function fundMission() {
@@ -363,12 +640,15 @@ async function fundMission() {
     })
   });
 
-  logActivity(
-    "3. Budget locked in XRPL escrow",
-    "Company wallet reserved the mission budget to the platform settlement wallet using EscrowCreate.",
-    result
-  );
+  if (state.appConfig?.appMode === "demo") {
+    logActivity(
+      "3. Budget locked in XRPL escrow",
+      "Company wallet reserved the mission budget to the platform settlement wallet using EscrowCreate.",
+      result
+    );
+  }
   await refreshSelectedMission();
+  return result;
 }
 
 async function queryPlatformAgent() {
@@ -489,105 +769,203 @@ async function runDemo() {
   }
 }
 
-document.getElementById("save-api-key").addEventListener("click", () => {
-  state.apiKey = elements.apiKeyInput.value.trim();
-  window.localStorage.setItem("adminApiKey", state.apiKey);
-  logActivity("Credentials saved", "Stored admin key locally in the browser.");
-});
+function saveApiKeyFrom(input) {
+  state.apiKey = input.value.trim();
+  window.localStorage.setItem(API_KEY_STORAGE_KEY, state.apiKey);
+  if (elements.apiKeyInput && elements.apiKeyInput !== input) {
+    elements.apiKeyInput.value = state.apiKey;
+  }
+  if (elements.prodApiKeyInput && elements.prodApiKeyInput !== input) {
+    elements.prodApiKeyInput.value = state.apiKey;
+  }
+}
 
-document.getElementById("generate-api-key").addEventListener("click", () => {
+function fillGeneratedKey(input) {
   const generated = generateRandomKey();
-  elements.apiKeyInput.value = generated;
-  state.apiKey = generated;
-  window.localStorage.setItem("adminApiKey", generated);
-  logActivity(
-    "Generated admin key",
-    "Created a random key in the browser. Use this for local or deployment setup, not as a public production secret."
-  );
-});
+  input.value = generated;
+  saveApiKeyFrom(input);
+}
 
-document.getElementById("generate-company-wallet").addEventListener("click", async () => {
-  try {
-    await generateCompanyWallet();
-  } catch (error) {
-    logActivity("Wallet generation failed", error.message, error.body || undefined);
-  }
-});
+function attachListeners() {
+  elements.themeToggle.addEventListener("click", () => {
+    setTheme(state.theme === "dark" ? "light" : "dark");
+  });
 
-document.getElementById("create-mission-button").addEventListener("click", async () => {
-  try {
-    await createMission();
-  } catch (error) {
-    logActivity("Mission creation failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("save-api-key")?.addEventListener("click", () => {
+    saveApiKeyFrom(elements.apiKeyInput);
+    logActivity("Credentials saved", "Stored admin key locally in the browser.");
+  });
 
-document.getElementById("fund-mission-button").addEventListener("click", async () => {
-  try {
-    await fundMission();
-  } catch (error) {
-    logActivity("Funding failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("generate-api-key")?.addEventListener("click", () => {
+    fillGeneratedKey(elements.apiKeyInput);
+    logActivity(
+      "Generated admin key",
+      "Created a random key in the browser. Use this for local or deployment setup, not as a public production secret."
+    );
+  });
 
-document.getElementById("query-agent-button").addEventListener("click", async () => {
-  try {
-    await queryPlatformAgent();
-  } catch (error) {
-    logActivity("x402 query failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("prod-save-api-key")?.addEventListener("click", () => {
+    saveApiKeyFrom(elements.prodApiKeyInput);
+  });
 
-document.getElementById("add-contributions-button").addEventListener("click", async () => {
-  try {
-    await addContributions();
-  } catch (error) {
-    logActivity("Contribution submission failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("prod-generate-api-key")?.addEventListener("click", () => {
+    fillGeneratedKey(elements.prodApiKeyInput);
+  });
 
-document.getElementById("resolve-mission-button").addEventListener("click", async () => {
-  try {
-    await resolveMission();
-  } catch (error) {
-    logActivity("Resolution failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("generate-company-wallet")?.addEventListener("click", async () => {
+    try {
+      await generateCompanyWallet();
+    } catch (error) {
+      logActivity("Wallet generation failed", error.message, error.body || undefined);
+    }
+  });
 
-document.getElementById("settle-mission-button").addEventListener("click", async () => {
-  try {
-    await settleMission();
-  } catch (error) {
-    logActivity("Settlement failed", error.message, error.body || undefined);
-  }
-});
+  document.getElementById("create-mission-button")?.addEventListener("click", async () => {
+    try {
+      await createMission();
+    } catch (error) {
+      logActivity("Mission creation failed", error.message, error.body || undefined);
+    }
+  });
 
-document.getElementById("run-demo-button").addEventListener("click", async () => {
-  await runDemo();
-});
+  document.getElementById("fund-mission-button")?.addEventListener("click", async () => {
+    try {
+      await fundMission();
+    } catch (error) {
+      logActivity("Funding failed", error.message, error.body || undefined);
+    }
+  });
 
-document.getElementById("clear-log").addEventListener("click", () => {
-  state.activity = [];
-  renderActivity();
-});
+  document.getElementById("query-agent-button")?.addEventListener("click", async () => {
+    try {
+      await queryPlatformAgent();
+    } catch (error) {
+      logActivity("x402 query failed", error.message, error.body || undefined);
+    }
+  });
+
+  document.getElementById("add-contributions-button")?.addEventListener("click", async () => {
+    try {
+      await addContributions();
+    } catch (error) {
+      logActivity("Contribution submission failed", error.message, error.body || undefined);
+    }
+  });
+
+  document.getElementById("resolve-mission-button")?.addEventListener("click", async () => {
+    try {
+      await resolveMission();
+    } catch (error) {
+      logActivity("Resolution failed", error.message, error.body || undefined);
+    }
+  });
+
+  document.getElementById("settle-mission-button")?.addEventListener("click", async () => {
+    try {
+      await settleMission();
+    } catch (error) {
+      logActivity("Settlement failed", error.message, error.body || undefined);
+    }
+  });
+
+  document.getElementById("run-demo-button")?.addEventListener("click", async () => {
+    await runDemo();
+  });
+
+  document.getElementById("clear-log")?.addEventListener("click", () => {
+    state.activity = [];
+    renderDemoActivity();
+  });
+
+  document.getElementById("prod-generate-wallet")?.addEventListener("click", async () => {
+    try {
+      const wallet = await generateCompanyWallet();
+      elements.prodCompanyWallet.value = wallet.address;
+    } catch (error) {
+      window.alert(error.message);
+    }
+  });
+
+  document.getElementById("prod-create-mission")?.addEventListener("click", async () => {
+    try {
+      const mission = await createMission({
+        title: elements.prodTitle.value.trim(),
+        problemStatement: elements.prodProblemStatement.value.trim(),
+        budgetDrops: elements.prodBudget.value.trim(),
+        feeBps: Number(elements.prodFeeBps.value),
+        companyWallet: elements.prodCompanyWallet.value.trim()
+      });
+      state.selectedMissionId = mission.id;
+      await refreshSelectedMission();
+      renderProductionMissionList();
+    } catch (error) {
+      window.alert(error.message);
+    }
+  });
+
+  document.getElementById("prod-fund-mission")?.addEventListener("click", async () => {
+    try {
+      await fundMission();
+      renderProductionMissionList();
+    } catch (error) {
+      window.alert(error.message);
+    }
+  });
+
+  document.getElementById("prod-refresh")?.addEventListener("click", async () => {
+    try {
+      await refreshMissions();
+      await refreshSelectedMission();
+    } catch (error) {
+      window.alert(error.message);
+    }
+  });
+}
 
 async function boot() {
-  elements.apiKeyInput.value = state.apiKey;
-  renderActivity();
+  setTheme(state.theme);
+  attachListeners();
+  if (elements.apiKeyInput) {
+    elements.apiKeyInput.value = state.apiKey;
+  }
+  if (elements.prodApiKeyInput) {
+    elements.prodApiKeyInput.value = state.apiKey;
+  }
+  if (elements.prodTitle) {
+    elements.prodTitle.value = DEMO_CONFIG.title;
+  }
+  if (elements.prodProblemStatement) {
+    elements.prodProblemStatement.value = DEMO_CONFIG.problemStatement;
+  }
+  renderDemoActivity();
 
   try {
     await loadAppState();
-    elements.apiKeyInput.value = state.apiKey;
-    if (state.appConfig?.demoSharedApiKey) {
-      elements.demoKeyHelper.textContent =
-        "A shared demo key is preloaded for this site so visitors can test the full workflow. Production should keep keys private.";
+    if (elements.apiKeyInput) {
+      elements.apiKeyInput.value = state.apiKey;
     }
-    logActivity(
-      "Interface ready",
-      "Button-first demo board loaded. Use the controls on the left to illustrate the protocol step by step."
-    );
+    if (elements.prodApiKeyInput) {
+      elements.prodApiKeyInput.value = state.apiKey;
+    }
+    if (elements.prodCompanyWallet && state.companyWallet) {
+      elements.prodCompanyWallet.value = state.companyWallet;
+    }
+    if (state.appConfig?.demoSharedApiKey && elements.demoKeyHelper) {
+      elements.demoKeyHelper.textContent =
+        "A shared demo key is preloaded for this site so judges can test the flow without extra setup.";
+    }
+    if (state.appConfig?.appMode === "demo") {
+      logActivity(
+        "Interface ready",
+        "The guided protocol board is loaded. Run the flow step by step or use the one-click demo."
+      );
+    }
   } catch (error) {
-    logActivity("Initial load failed", error.message, error.body || undefined);
+    if (state.appConfig?.appMode === "demo") {
+      logActivity("Initial load failed", error.message, error.body || undefined);
+    } else {
+      window.alert(error.message);
+    }
   }
 }
 
