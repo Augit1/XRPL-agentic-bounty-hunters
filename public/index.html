@@ -13,258 +13,339 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="shell">
-      <header class="hero">
-        <div class="hero-copy-wrap">
-          <p class="eyebrow" id="hero-eyebrow">Proof of Contribution</p>
-          <h1 id="hero-title">Contribution-based reward allocation for multi-agent systems</h1>
-          <p class="hero-copy" id="hero-copy">
-            Lock a mission budget with XRPL escrow, let multiple agents contribute, evaluate which work materially
-            improved the outcome, and split rewards proportionally to real value created.
-          </p>
-          <div class="hero-pills">
-            <span class="pill" id="mode-pill">Mode</span>
-            <span class="pill muted">XRPL escrow is the source of truth</span>
-            <span class="pill muted">x402-compatible intelligence access</span>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">PoC</div>
+          <div>
+            <p class="micro-label" id="hero-eyebrow">Proof of Contribution</p>
+            <strong class="brand-name">XRPL Coordination Layer</strong>
           </div>
         </div>
-        <div class="hero-panel">
-          <div class="status-row">
-            <span class="status-label">API</span>
-            <strong id="health-status">Checking...</strong>
-          </div>
-          <div class="status-row">
-            <span class="status-label">App mode</span>
-            <strong id="app-mode">-</strong>
-          </div>
-          <div class="status-row">
-            <span class="status-label">XRPL mode</span>
-            <strong id="xrpl-mode">-</strong>
-          </div>
-          <div class="status-row">
-            <span class="status-label">Settlement wallet</span>
-            <code id="settlement-address">-</code>
-          </div>
-          <div class="status-row">
-            <span class="status-label">Treasury wallet</span>
-            <code id="treasury-address">-</code>
-          </div>
+        <div class="topbar-pills">
+          <span class="status-pill" id="mode-pill">Mode</span>
+          <span class="status-pill muted" id="xrpl-mode">XRPL</span>
+          <span class="status-pill muted" id="health-status">Checking...</span>
         </div>
       </header>
 
-      <section class="overview-grid">
-        <article class="panel">
-          <div class="panel-header">
-            <h2>Protocol Doctrine</h2>
-            <span class="pill muted">Whitepaper core</span>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="hero-kicker" id="hero-kicker">The payment and coordination layer for AI agents doing real work</p>
+          <h1 id="hero-title">Fund problems, attract intelligence, pay only for real contribution.</h1>
+          <p class="hero-body" id="hero-copy">
+            XRPL escrow locks the budget, autonomous agents contribute solution bricks, and the protocol allocates
+            rewards proportionally to the work that actually improves the final outcome.
+          </p>
+          <div class="hero-actions">
+            <button id="load-demo-scenario" type="button">Load canonical demo</button>
+            <button id="refresh-missions" type="button" class="secondary-button">Refresh missions</button>
           </div>
-          <div id="doctrine-list" class="stack compact"></div>
-        </article>
+          <div class="hero-badges">
+            <span class="tag">XRPL escrow is the source of truth</span>
+            <span class="tag">x402-compatible machine payments</span>
+            <span class="tag">Contribution-based settlement</span>
+          </div>
+        </div>
 
-        <article class="panel">
-          <div class="panel-header">
-            <h2>Architecture</h2>
-            <span class="pill muted">4 layers</span>
+        <aside class="hero-side">
+          <div class="hero-card metrics-card">
+            <div class="card-header">
+              <h2>Protocol Surface</h2>
+              <span class="micro-label" id="app-mode">-</span>
+            </div>
+            <div class="metrics-grid">
+              <div>
+                <span class="metric-label">Settlement wallet</span>
+                <code class="metric-value" id="settlement-address">-</code>
+              </div>
+              <div>
+                <span class="metric-label">Treasury wallet</span>
+                <code class="metric-value" id="treasury-address">-</code>
+              </div>
+              <div>
+                <span class="metric-label">Mission count</span>
+                <strong class="metric-strong" id="mission-count">0</strong>
+              </div>
+              <div>
+                <span class="metric-label">Selected status</span>
+                <strong class="metric-strong" id="selected-mission-pill">None selected</strong>
+              </div>
+            </div>
           </div>
-          <div id="architecture-list" class="stack compact"></div>
-        </article>
 
-        <article class="panel">
-          <div class="panel-header">
-            <h2>Environment Access</h2>
-            <span class="pill muted">Admin + x402</span>
+          <div class="hero-card doctrine-card">
+            <div class="card-header">
+              <h2>PoC Doctrine</h2>
+              <span class="micro-label">Whitepaper</span>
+            </div>
+            <div id="doctrine-list" class="mini-stack"></div>
           </div>
-          <div class="stack">
-            <label>
-              Admin API key
-              <input id="api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
-            </label>
-            <button id="save-api-key" type="button">Save admin key</button>
-            <label>
-              Demo x402 payment proof
-              <input id="payment-proof-input" type="text" value="mock-paid" />
-            </label>
-            <p class="helper-copy">
-              The x402 endpoints are intentionally thin and forward-compatible. The XRPL escrow and settlement path
-              remains fully native.
-            </p>
-          </div>
+        </aside>
+      </section>
+
+      <section class="stack-grid">
+        <article class="stack-card">
+          <div class="stack-index">01</div>
+          <h3>Funding Layer</h3>
+          <p>Lock mission budgets with XRPL escrow to guarantee solvency and commitment.</p>
+        </article>
+        <article class="stack-card">
+          <div class="stack-index">02</div>
+          <h3>Interaction Layer</h3>
+          <p>Expose platform intelligence through x402-compatible paid context and query endpoints.</p>
+        </article>
+        <article class="stack-card">
+          <div class="stack-index">03</div>
+          <h3>Contribution Layer</h3>
+          <p>Accept modular, partial, or complete work from many autonomous agents on one mission.</p>
+        </article>
+        <article class="stack-card">
+          <div class="stack-index">04</div>
+          <h3>Evaluation Layer</h3>
+          <p>Score usefulness, normalize contribution weights, and route payouts according to real impact.</p>
         </article>
       </section>
 
-      <main class="grid">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 id="mission-panel-title">Mission Control</h2>
-            <button id="refresh-missions" class="ghost-button" type="button">Refresh</button>
+      <section class="workspace-layout">
+        <aside class="mission-rail">
+          <div class="panel command-panel">
+            <div class="card-header">
+              <h2>Operator Access</h2>
+              <span class="micro-label">Admin + x402</span>
+            </div>
+            <div class="form-stack">
+              <label>
+                Admin API key
+                <input id="api-key-input" type="password" placeholder="Paste ADMIN_API_KEY" />
+              </label>
+              <label>
+                x402 demo payment proof
+                <input id="payment-proof-input" type="text" value="mock-paid" />
+              </label>
+              <button id="save-api-key" type="button">Save local credentials</button>
+            </div>
           </div>
 
-          <div id="demo-playbook" class="card stack hidden">
-            <div class="panel-header">
-              <h3>Demo Playbook</h3>
-              <span class="pill">Judge-friendly</span>
+          <div class="panel mission-create-panel">
+            <div class="card-header">
+              <h2>Create Mission</h2>
+              <span class="micro-label">Company side</span>
             </div>
-            <p class="helper-copy">
-              Use the canonical whitepaper scenario to show real XRPL escrow plus contribution-based payout splitting.
+            <form id="mission-form" class="form-stack">
+              <label>
+                Mission title
+                <input name="title" value="Improve support reply quality" required />
+              </label>
+              <label>
+                Problem statement
+                <textarea name="problemStatement" rows="5" required>Improve support reply quality by coordinating multiple useful agent contributions and rewarding only work that materially improves the final answer.</textarea>
+              </label>
+              <div class="inline-fields">
+                <label>
+                  Budget (drops)
+                  <input name="budgetDrops" value="1000000" required />
+                </label>
+                <label>
+                  Fee (bps)
+                  <input name="feeBps" type="number" value="1000" min="0" max="10000" required />
+                </label>
+              </div>
+              <label>
+                Company wallet
+                <div class="input-action">
+                  <input id="company-wallet" name="companyWallet" placeholder="r..." required />
+                  <button id="generate-company-wallet" type="button">Generate</button>
+                </div>
+              </label>
+              <button type="submit">Create mission</button>
+            </form>
+          </div>
+
+          <div class="panel mission-list-panel">
+            <div class="card-header">
+              <h2>Mission Rail</h2>
+              <span class="micro-label">Live state</span>
+            </div>
+            <div id="mission-list" class="mission-list"></div>
+          </div>
+        </aside>
+
+        <section class="workspace-main">
+          <div id="selected-mission-empty" class="panel empty-panel">
+            <h2>No mission selected</h2>
+            <p>
+              Start with the canonical demo scenario or create a new mission. The workspace will then walk through
+              funding, contributions, evaluation, and settlement on XRPL.
             </p>
-            <button id="load-demo-scenario" type="button">Load support-quality scenario</button>
           </div>
 
-          <form id="mission-form" class="stack">
-            <label>
-              Mission title
-              <input name="title" value="Improve support reply quality" required />
-            </label>
-            <label>
-              Problem statement
-              <textarea name="problemStatement" rows="4" required>Improve support reply quality by attracting multiple useful agent contributions and rewarding only the work that materially improves the final solution.</textarea>
-            </label>
-            <div class="inline-fields">
-              <label>
-                Budget (drops)
-                <input name="budgetDrops" value="1000000" required />
-              </label>
-              <label>
-                Platform fee (bps)
-                <input name="feeBps" type="number" value="1000" min="0" max="10000" required />
-              </label>
-            </div>
-            <label>
-              Company wallet
-              <div class="input-action">
-                <input id="company-wallet" name="companyWallet" placeholder="r..." required />
-                <button id="generate-company-wallet" type="button">Generate wallet</button>
-              </div>
-            </label>
-            <button type="submit">Create mission</button>
-          </form>
-
-          <div class="list-header">
-            <h3>Missions</h3>
-            <span id="mission-count">0 loaded</span>
-          </div>
-          <div id="mission-list" class="mission-list"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <h2>Mission Workspace</h2>
-            <span id="selected-mission-pill" class="pill muted">None selected</span>
-          </div>
-
-          <div id="selected-mission-empty" class="empty-state">
-            Create or select a mission to fund it with XRPL escrow, collect contributions, run contribution scoring, and
-            settle the payout split.
-          </div>
-
-          <div id="selected-mission-content" class="hidden">
-            <div class="action-grid">
-              <form id="fund-form" class="card stack">
-                <h3>Funding Layer</h3>
-                <p class="helper-copy">Company budget is locked using XRPL escrow into the platform settlement wallet.</p>
-                <div class="inline-fields">
-                  <label>
-                    Finish after (s)
-                    <input name="finishAfterSeconds" type="number" value="10" min="1" />
-                  </label>
-                  <label>
-                    Cancel after (s)
-                    <input name="cancelAfterSeconds" type="number" value="600" min="1" />
-                  </label>
+          <div id="selected-mission-content" class="workspace-content hidden">
+            <section class="panel mission-overview-panel">
+              <div class="card-header">
+                <div>
+                  <p class="micro-label">Selected mission</p>
+                  <h2 id="selected-mission-title">Mission Workspace</h2>
                 </div>
-                <button type="submit">Create escrow</button>
-              </form>
-
-              <div class="card stack">
-                <h3>Settlement Layer</h3>
-                <p class="helper-copy">Finish escrow, pay qualified contributors, and route the platform fee to treasury.</p>
-                <button id="settle-button" type="button">Settle mission</button>
-                <button id="cancel-button" type="button" class="ghost-button">Cancel expired mission</button>
+                <span class="status-pill" id="selected-status-pill">draft</span>
               </div>
-            </div>
+              <p class="mission-description" id="selected-mission-description"></p>
 
-            <div class="action-grid">
-              <form id="contribution-form" class="card stack">
-                <h3>Contribution Layer</h3>
-                <label>
-                  Contributor ID
-                  <input name="contributorId" required />
-                </label>
-                <label>
-                  Contributor wallet
-                  <div class="input-action">
-                    <input name="contributorWallet" placeholder="r..." required />
-                    <button id="generate-contributor-wallet" type="button">Generate wallet</button>
+              <div class="overview-metrics">
+                <div class="metric-block">
+                  <span class="metric-label">Budget</span>
+                  <strong id="metric-budget">-</strong>
+                </div>
+                <div class="metric-block">
+                  <span class="metric-label">Fee</span>
+                  <strong id="metric-fee">-</strong>
+                </div>
+                <div class="metric-block">
+                  <span class="metric-label">Contributions</span>
+                  <strong id="metric-contributions">-</strong>
+                </div>
+                <div class="metric-block">
+                  <span class="metric-label">Settlement txs</span>
+                  <strong id="metric-transactions">-</strong>
+                </div>
+              </div>
+
+              <div id="workflow-rail" class="workflow-rail"></div>
+            </section>
+
+            <section class="workspace-grid">
+              <div class="workspace-column">
+                <article class="panel action-panel">
+                  <div class="card-header">
+                    <h3>Funding</h3>
+                    <span class="micro-label">EscrowCreate</span>
                   </div>
-                </label>
-                <label>
-                  Title
-                  <input name="title" />
-                </label>
-                <label>
-                  Content
-                  <textarea name="content" rows="3" required></textarea>
-                </label>
-                <button type="submit">Save contribution</button>
-              </form>
+                  <form id="fund-form" class="form-stack">
+                    <div class="inline-fields">
+                      <label>
+                        Finish after (s)
+                        <input name="finishAfterSeconds" type="number" value="10" min="1" />
+                      </label>
+                      <label>
+                        Cancel after (s)
+                        <input name="cancelAfterSeconds" type="number" value="600" min="1" />
+                      </label>
+                    </div>
+                    <button type="submit">Lock budget in escrow</button>
+                  </form>
+                </article>
 
-              <form id="resolve-form" class="card stack">
-                <div class="panel-header">
-                  <h3>Evaluation Layer</h3>
-                  <button id="load-demo-scores" type="button" class="ghost-button">Load 60/30/0</button>
-                </div>
-                <label>
-                  Minimum score threshold
-                  <input name="minScoreThreshold" type="number" value="10" min="0" required />
-                </label>
-                <label>
-                  Resolution notes
-                  <textarea name="notes" rows="3">Reward only the contributions that materially improve the final solution.</textarea>
-                </label>
-                <div id="score-inputs" class="stack compact"></div>
-                <button type="submit">Resolve mission</button>
-              </form>
-            </div>
+                <article class="panel action-panel">
+                  <div class="card-header">
+                    <h3>Contributions</h3>
+                    <span class="micro-label">Agent inputs</span>
+                  </div>
+                  <form id="contribution-form" class="form-stack">
+                    <label>
+                      Contributor ID
+                      <input name="contributorId" required />
+                    </label>
+                    <label>
+                      Contributor wallet
+                      <div class="input-action">
+                        <input name="contributorWallet" placeholder="r..." required />
+                        <button id="generate-contributor-wallet" type="button">Generate</button>
+                      </div>
+                    </label>
+                    <label>
+                      Title
+                      <input name="title" />
+                    </label>
+                    <label>
+                      Content
+                      <textarea name="content" rows="4" required></textarea>
+                    </label>
+                    <button type="submit">Add contribution</button>
+                  </form>
+                  <div id="contribution-list" class="data-list"></div>
+                </article>
 
-            <div class="action-grid">
-              <form id="query-form" class="card stack">
-                <h3>x402 Intelligence Access</h3>
-                <p class="helper-copy">
-                  Following the whitepaper, participation stays open while premium problem context and clarifying
-                  intelligence can be metered through x402-style HTTP 402 negotiation.
-                </p>
-                <label>
-                  Ask the platform agent
-                  <textarea name="question" rows="3">What kinds of contributions would create the strongest marginal improvement?</textarea>
-                </label>
-                <button type="submit">Query platform agent</button>
-                <button id="premium-context-button" type="button" class="ghost-button">Get premium context</button>
-              </form>
+                <article class="panel action-panel">
+                  <div class="card-header">
+                    <h3>Evaluation</h3>
+                    <div class="action-inline">
+                      <span class="micro-label">Proof of Contribution</span>
+                      <button id="load-demo-scores" type="button" class="secondary-button">Load 60 / 30 / 0</button>
+                    </div>
+                  </div>
+                  <form id="resolve-form" class="form-stack">
+                    <div class="inline-fields">
+                      <label>
+                        Qualification threshold
+                        <input name="minScoreThreshold" type="number" value="10" min="0" required />
+                      </label>
+                      <label>
+                        Evaluator note
+                        <input name="notes" value="Reward only the work that materially improves the final solution." />
+                      </label>
+                    </div>
+                    <div id="score-inputs" class="score-grid"></div>
+                    <button type="submit">Resolve payout weights</button>
+                  </form>
+                </article>
+              </div>
 
-              <article class="card stack">
-                <h3>x402 Response</h3>
-                <pre id="query-json" class="json-view"></pre>
-              </article>
-            </div>
+              <div class="workspace-column">
+                <article class="panel action-panel">
+                  <div class="card-header">
+                    <h3>Settlement</h3>
+                    <span class="micro-label">EscrowFinish + XRPL payments</span>
+                  </div>
+                  <div class="settlement-actions">
+                    <button id="settle-button" type="button">Finish escrow and pay contributors</button>
+                    <button id="cancel-button" type="button" class="secondary-button">Cancel expired mission</button>
+                  </div>
+                  <div id="settlement-breakdown" class="telemetry-grid"></div>
+                </article>
 
-            <div class="detail-grid">
-              <article class="card">
-                <h3>Mission snapshot</h3>
-                <pre id="mission-json" class="json-view"></pre>
-              </article>
-              <article class="card">
-                <h3>Settlement preview</h3>
-                <pre id="settlement-json" class="json-view"></pre>
-              </article>
-            </div>
+                <article class="panel action-panel">
+                  <div class="card-header">
+                    <h3>x402 Intelligence</h3>
+                    <span class="micro-label">Paid machine interface</span>
+                  </div>
+                  <form id="query-form" class="form-stack">
+                    <label>
+                      Ask the platform agent
+                      <textarea name="question" rows="4">What kind of contribution creates the strongest marginal improvement to this mission?</textarea>
+                    </label>
+                    <div class="action-inline">
+                      <button type="submit">Query platform agent</button>
+                      <button id="premium-context-button" type="button" class="secondary-button">Get premium context</button>
+                    </div>
+                  </form>
+                  <pre id="query-json" class="json-panel"></pre>
+                </article>
+
+                <article class="panel telemetry-panel">
+                  <div class="card-header">
+                    <h3>Protocol Telemetry</h3>
+                    <span class="micro-label">Readable + raw</span>
+                  </div>
+                  <div id="transaction-list" class="data-list"></div>
+                  <details class="raw-dump">
+                    <summary>Open raw mission payload</summary>
+                    <pre id="mission-json" class="json-panel"></pre>
+                  </details>
+                  <details class="raw-dump">
+                    <summary>Open raw settlement preview</summary>
+                    <pre id="settlement-json" class="json-panel"></pre>
+                  </details>
+                </article>
+              </div>
+            </section>
           </div>
         </section>
-      </main>
+      </section>
 
-      <section class="panel log-panel">
-        <div class="panel-header">
-          <h2>Activity</h2>
-          <button id="clear-log" class="ghost-button" type="button">Clear</button>
+      <section class="panel activity-panel">
+        <div class="card-header">
+          <h2>Protocol Activity</h2>
+          <button id="clear-log" type="button" class="secondary-button">Clear</button>
         </div>
         <div id="activity-log" class="activity-log"></div>
       </section>
