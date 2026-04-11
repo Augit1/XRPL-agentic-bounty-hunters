@@ -144,16 +144,23 @@ async function main(): Promise<void> {
       typeof (error as { statusCode?: unknown }).statusCode === "number"
         ? ((error as { statusCode: number }).statusCode)
         : 400;
+    const details =
+      typeof error === "object" &&
+      error !== null &&
+      "body" in error
+        ? ((error as { body?: unknown }).body)
+        : undefined;
 
     console.error(
       JSON.stringify({
         level: "error",
         method: request.method,
         path: request.originalUrl,
-        message
+        message,
+        details
       })
     );
-    response.status(statusCode).json({ error: message });
+    response.status(statusCode).json(details === undefined ? { error: message } : { error: message, details });
   });
 
   const server = app.listen(config.port, config.host, () => {

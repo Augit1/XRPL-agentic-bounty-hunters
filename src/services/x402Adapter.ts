@@ -69,6 +69,21 @@ function extractErrorMessage(payload: SafeJson, fallback: string): string {
   return fallback;
 }
 
+function responseDiagnostics(response: Response) {
+  const headersToCapture = [
+    "content-type",
+    "payment-required",
+    "payment-response",
+    "x-request-id"
+  ] as const;
+
+  return Object.fromEntries(
+    headersToCapture
+      .map((headerName) => [headerName, response.headers.get(headerName)])
+      .filter(([, value]) => Boolean(value))
+  );
+}
+
 export class X402Adapter {
   private paymentHandler?: RequestHandler;
   private paymentFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -193,6 +208,19 @@ export class X402Adapter {
                   resource: `/x402${QUERY_ROUTE_PATH}`
                 })
               };
+            },
+            settlementFailedResponseBody: async (_context: any, settleResult: any) => {
+              return {
+                contentType: "application/json",
+                body: {
+                  error: "x402 payment settlement failed",
+                  errorReason: settleResult?.errorReason ?? null,
+                  errorMessage: settleResult?.errorMessage ?? null,
+                  payer: settleResult?.payer ?? null,
+                  transaction: settleResult?.transaction ?? null,
+                  network: settleResult?.network ?? null
+                }
+              };
             }
           }
         },
@@ -253,10 +281,52 @@ export class X402Adapter {
     const paidBody = safeParseJson(paidText);
 
     if (!paidResponse.ok) {
+      const paidPaymentRequiredHeader = paidResponse.headers.get("PAYMENT-REQUIRED");
+      const paidPaymentRequired =
+        paidPaymentRequiredHeader ? decodePaymentRequiredHeader(paidPaymentRequiredHeader) : null;
+      const paidPaymentResponseHeader = paidResponse.headers.get("PAYMENT-RESPONSE");
+      const paidPaymentResponse =
+        paidPaymentResponseHeader ? decodePaymentResponseHeader(paidPaymentResponseHeader) : null;
+      const diagnostics = {
+        phase: "paid-retry-rejected",
+        buyerAddress: this.getDemoBuyerAddress(),
+        payTo: config.x402PayTo,
+        network: config.x402Network,
+        price: config.x402PriceUsd,
+        initialStatus: unpaidResponse.status,
+        paidStatus: paidResponse.status,
+        initialResponse: {
+          headers: responseDiagnostics(unpaidResponse),
+          body: unpaidBody,
+          paymentRequired
+        },
+        paidResponse: {
+          headers: responseDiagnostics(paidResponse),
+          body: paidBody,
+          paymentRequired: paidPaymentRequired,
+          paymentResponse: paidPaymentResponse
+        }
+      };
+
+      console.error(
+        JSON.stringify({
+          level: "error",
+          component: "x402-demo-query",
+          diagnostics
+        })
+      );
+
       const error = new Error(
-        extractErrorMessage(paidBody, `x402 paid query failed with status ${paidResponse.status}.`)
-      ) as Error & { body?: SafeJson };
-      error.body = paidBody;
+        extractErrorMessage(
+          paidBody,
+          extractErrorMessage(
+            paidPaymentRequired as SafeJson,
+            `x402 paid query failed with status ${paidResponse.status}.`
+          )
+        )
+      ) as Error & { body?: SafeJson; statusCode?: number };
+      error.statusCode = paidResponse.status;
+      error.body = diagnostics;
       throw error;
     }
 

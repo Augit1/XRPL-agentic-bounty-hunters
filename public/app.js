@@ -1040,7 +1040,7 @@ function attachListeners() {
     try {
       await queryPlatformAgent();
     } catch (error) {
-      logActivity("x402 query failed", error.message, error.body || undefined);
+      logActivity("x402 query failed", error.message, error.body?.details || error.body || undefined);
     }
   });
 
