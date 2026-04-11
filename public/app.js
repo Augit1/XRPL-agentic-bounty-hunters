@@ -321,8 +321,9 @@ function setTheme(theme) {
   state.theme = theme === "light" ? "light" : "dark";
   elements.body.dataset.theme = state.theme;
   window.localStorage.setItem(THEME_STORAGE_KEY, state.theme);
-  elements.themeToggle.textContent = state.theme === "dark" ? "☼" : "☾";
-//  elements.themeToggle.textContent = state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  const nextThemeLabel = state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  elements.themeToggle.setAttribute("aria-label", nextThemeLabel);
+  elements.themeToggle.setAttribute("title", nextThemeLabel);
 }
 
 function applyAppMode() {

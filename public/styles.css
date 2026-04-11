@@ -97,6 +97,71 @@ button:active {
   box-shadow: none;
 }
 
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 54px;
+  block-size: 54px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.theme-toggle-icon {
+  inline-size: 24px;
+  block-size: 24px;
+}
+
+.theme-toggle-core,
+.theme-toggle-rays,
+.theme-toggle-cutout {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform 240ms ease,
+    opacity 240ms ease,
+    cx 240ms ease,
+    cy 240ms ease,
+    r 240ms ease;
+}
+
+body[data-theme="dark"] .theme-toggle-rays {
+  opacity: 0;
+  transform: scale(0.55) rotate(-45deg);
+}
+
+body[data-theme="dark"] .theme-toggle-core {
+  transform: rotate(-25deg) scale(1.05);
+}
+
+body[data-theme="dark"] .theme-toggle-cutout {
+  cx: 22;
+  cy: 10;
+  r: 8.5;
+}
+
+body[data-theme="light"] .theme-toggle-rays {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+body[data-theme="light"] .theme-toggle-core {
+  transform: rotate(0deg) scale(1);
+}
+
+body[data-theme="light"] .theme-toggle-cutout {
+  cx: 30;
+  cy: 2;
+  r: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-core,
+  .theme-toggle-rays,
+  .theme-toggle-cutout {
+    transition: none;
+  }
+}
+
 label {
   display: grid;
   gap: 10px;
