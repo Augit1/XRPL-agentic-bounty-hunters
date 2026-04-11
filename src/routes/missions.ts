@@ -53,7 +53,7 @@ const intakeMissionSchema = z.object({
 });
 
 function buildClarificationBrief(input: z.infer<typeof intakeMissionSchema>) {
-  const { platformFee, contributorPool } = calculateFeeAndPool(input.budgetDrops, config.platformFeeBps);
+  const { totalBudget, platformFee, contributorPool } = calculateFeeAndPool(input.budgetDrops, config.platformFeeBps);
 
   return {
     intakeSummary: `The platform agent reframed "${input.title}" into an escrow-backed mission with measurable outcomes and contributor attribution.`,
@@ -82,10 +82,10 @@ function buildClarificationBrief(input: z.infer<typeof intakeMissionSchema>) {
       ]
     },
     proposedEconomics: {
-      totalBudgetDrops: input.budgetDrops,
+      totalBudgetDrops: totalBudget.toString(),
       platformFeeBps: config.platformFeeBps,
-      platformFeeDrops: platformFee,
-      contributorPoolDrops: contributorPool
+      platformFeeDrops: platformFee.toString(),
+      contributorPoolDrops: contributorPool.toString()
     }
   };
 }

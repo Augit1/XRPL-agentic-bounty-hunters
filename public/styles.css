@@ -69,9 +69,14 @@ textarea {
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   border: 0;
   border-radius: 999px;
-  padding: 15px 22px;
+  min-height: 58px;
+  padding: 17px 24px;
   font-weight: 700;
   cursor: pointer;
   color: var(--accent-text);
@@ -88,6 +93,27 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.88;
+}
+
+.button-spinner {
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--accent-text) 26%, transparent);
+  border-top-color: var(--accent-text);
+  animation: button-spin 0.8s linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .secondary-button {
@@ -172,7 +198,7 @@ label {
 input,
 textarea {
   width: 100%;
-  padding: 15px 16px;
+  padding: 17px 18px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--bg-soft);
@@ -217,7 +243,7 @@ h4 {
 .page-shell {
   width: min(1440px, calc(100vw - 42px));
   margin: 0 auto;
-  padding: 26px 0 56px;
+  padding: 30px 0 64px;
 }
 
 .topbar,
@@ -244,7 +270,7 @@ h4 {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding: 18px 22px;
+  padding: 20px 24px;
   border-radius: 999px;
   margin-bottom: 22px;
 }
@@ -261,7 +287,7 @@ h4 {
 
 .hero {
   border-radius: var(--radius-lg);
-  padding: 40px;
+  padding: 44px;
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) 320px;
   gap: 28px;
@@ -320,6 +346,12 @@ h4 {
   gap: 16px;
 }
 
+.button-stack > button,
+.button-row > button,
+.wide-button {
+  width: 100%;
+}
+
 .hero-pills,
 .button-row,
 .timeline-strip,
@@ -373,7 +405,7 @@ h4 {
 .mission-list-item,
 .timeline-chip {
   border-radius: var(--radius-md);
-  padding: 22px;
+  padding: 26px;
 }
 
 .screen {
@@ -422,14 +454,14 @@ h4 {
 .mission-form-panel,
 .compact-panel {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .metric-inline {
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 15px 16px;
+  gap: 12px;
+  padding: 18px 20px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--bg-soft);
@@ -438,8 +470,8 @@ h4 {
 .notice-banner,
 .clarification-panel {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 16px;
+  padding: 20px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--panel-muted);
@@ -486,6 +518,7 @@ h4 {
 
 .status-card strong {
   font-size: 1.3rem;
+  line-height: 1.3;
 }
 
 .workflow-rail {
@@ -523,7 +556,7 @@ h4 {
 .summary-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 16px;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -538,7 +571,7 @@ h4 {
 .summary-row {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
+  gap: 24px;
   align-items: flex-start;
   min-width: 0;
 }
@@ -591,7 +624,7 @@ h4 {
 }
 
 .data-block {
-  margin-top: 18px;
+  margin-top: 22px;
 }
 
 .mission-list-item {
@@ -672,7 +705,7 @@ h4 {
   .raw-dump,
   .mission-list-item,
   .timeline-chip {
-    padding: 18px;
+    padding: 20px;
   }
 
   h1 {

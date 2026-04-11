@@ -153,8 +153,16 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;");
 }
 
+function safeJsonStringify(value, spacing = 2) {
+  return JSON.stringify(
+    value,
+    (_key, currentValue) => (typeof currentValue === "bigint" ? currentValue.toString() : currentValue),
+    spacing
+  );
+}
+
 function truncateValue(value, limit = 260) {
-  const serialized = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  const serialized = typeof value === "string" ? value : safeJsonStringify(value, 2);
   if (!serialized) {
     return "";
   }
@@ -335,6 +343,62 @@ function platformFeeBps() {
   return state.appConfig?.platformFeeBps ?? 1000;
 }
 
+function platformFeePercentLabel(feeBps = platformFeeBps()) {
+  return `${feeBps / 100}%`;
+}
+
+function calculateFeeAmount(budgetDrops, feeBps = platformFeeBps()) {
+  if (!/^\d+$/.test(String(budgetDrops || "").trim())) {
+    return null;
+  }
+
+  const budget = BigInt(String(budgetDrops).trim());
+  return ((budget * BigInt(feeBps)) / 10000n).toString();
+}
+
+function feePreviewText(budgetDrops, feeBps = platformFeeBps()) {
+  const feeAmount = calculateFeeAmount(budgetDrops, feeBps);
+  if (!feeAmount) {
+    return `${platformFeePercentLabel(feeBps)} of budget`;
+  }
+
+  return `${feeAmount} drops fee (${platformFeePercentLabel(feeBps)} of ${String(budgetDrops).trim()} drops)`;
+}
+
+function setFeePreviewFromBudget() {
+  if (!elements.prodFeePreview || !elements.prodBudget) {
+    return;
+  }
+
+  elements.prodFeePreview.textContent = feePreviewText(elements.prodBudget.value, platformFeeBps());
+}
+
+function setButtonLoading(button, loading, busyLabel = "Working...") {
+  if (!button) {
+    return;
+  }
+
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.innerHTML;
+  }
+
+  button.disabled = loading;
+  button.classList.toggle("is-loading", loading);
+  button.setAttribute("aria-busy", loading ? "true" : "false");
+  button.innerHTML = loading
+    ? `<span class="button-spinner" aria-hidden="true"></span><span>${escapeHtml(busyLabel)}</span>`
+    : button.dataset.defaultLabel;
+}
+
+async function runWithButtonLoading(button, busyLabel, task) {
+  setButtonLoading(button, true, busyLabel);
+  try {
+    return await task();
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
 function showProdStatus(message, tone = "neutral") {
   if (!elements.prodStatus) {
     return;
@@ -395,7 +459,8 @@ function renderClarification(clarification) {
     <div class="pill-row">${dimensions}</div>
     <p class="helper-copy">
       Proposed economics: ${escapeHtml(clarification.proposedEconomics?.totalBudgetDrops || "-")} drops total,
-      ${escapeHtml(String(clarification.proposedEconomics?.platformFeeBps || platformFeeBps()))} bps platform fee,
+      ${escapeHtml(String(clarification.proposedEconomics?.platformFeeDrops || "-"))} drops platform fee
+      (${escapeHtml(platformFeePercentLabel(clarification.proposedEconomics?.platformFeeBps || platformFeeBps()))}),
       ${escapeHtml(clarification.proposedEconomics?.contributorPoolDrops || "-")} drops for contributors.
     </p>
   `;
@@ -407,7 +472,7 @@ function applyAppMode() {
   elements.productionApp.classList.toggle("hidden", isDemo);
 
   if (isDemo) {
-    elements.heroTitle.textContent = "Interactive Proof of Contribution demo.";
+    elements.heroTitle.textContent = "Interactive SolveX demo.";
     elements.heroText.textContent =
       "Walk through funding, x402 problem clarification, weighted contribution scoring, and real XRPL settlement.";
   } else {
@@ -462,7 +527,7 @@ function renderDemoActivity() {
           <strong>${escapeHtml(entry.step)}</strong>
           <p>${escapeHtml(entry.detail)}</p>
           ${entry.payload && typeof entry.payload === "object" ? renderExplorerItems(entry.payload) : ""}
-          ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(typeof entry.payload === "string" ? entry.payload : JSON.stringify(entry.payload, null, 2))}</pre>` : ""}
+          ${entry.payload ? `<pre class="json-panel compact">${escapeHtml(typeof entry.payload === "string" ? entry.payload : safeJsonStringify(entry.payload, 2))}</pre>` : ""}
         </article>
       `
     )
@@ -539,10 +604,12 @@ function renderDemoSummary() {
   const mission = selectedMission();
   elements.selectedMissionPill.textContent = mission ? mission.status : "No mission";
   elements.metricBudget.textContent = mission ? `${mission.budgetDrops} drops` : "-";
-  elements.metricFee.textContent = mission ? `${mission.feeBps} bps` : "-";
+  elements.metricFee.textContent = mission
+    ? `${calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"} drops`
+    : "-";
   elements.metricContributions.textContent = mission ? String(mission.contributions.length) : "-";
   elements.metricTransactions.textContent = mission ? String(mission.settlementTransactions?.length || 0) : "-";
-  elements.missionJson.textContent = mission ? JSON.stringify(mission, null, 2) : "";
+  elements.missionJson.textContent = mission ? safeJsonStringify(mission, 2) : "";
 
   if (!mission) {
     elements.humanSummary.innerHTML = `<div class="empty-state">No mission yet. Start with “Generate company wallet” and “Create structured mission”.</div>`;
@@ -680,7 +747,7 @@ function renderProductionSummary() {
   elements.prodDetailStatusPill.textContent = missionStatusLabel(mission);
   elements.prodDetailProblem.textContent = mission.problemStatement;
   elements.prodBudgetMetric.textContent = `${mission.budgetDrops} drops`;
-  elements.prodFeeMetric.textContent = `${mission.feeBps} bps`;
+  elements.prodFeeMetric.textContent = `${calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"} drops`;
   elements.prodQualifiedMetric.textContent = String(mission.contributions.filter((item) => item.qualifies).length);
   elements.prodTransactionsMetric.textContent = String(mission.settlementTransactions?.length || 0);
 
@@ -751,9 +818,7 @@ function renderAll() {
   renderDemoSummary();
   renderProductionMissionList();
   renderProductionSummary();
-  if (elements.prodFeePreview) {
-    elements.prodFeePreview.textContent = `${platformFeeBps() / 100}% of mission budget`;
-  }
+  setFeePreviewFromBudget();
 }
 
 async function loadAppState() {
@@ -950,7 +1015,7 @@ async function queryPlatformAgent() {
   });
 
   state.lastQueryResult = result;
-  elements.queryJson.textContent = JSON.stringify(result, null, 2);
+  elements.queryJson.textContent = safeJsonStringify(result, 2);
 
   if (result.x402?.paymentRequired) {
     logActivity(
@@ -1043,7 +1108,7 @@ async function resolveMission() {
     })
   });
 
-  elements.queryJson.textContent = JSON.stringify(result.plan, null, 2);
+  elements.queryJson.textContent = safeJsonStringify(result.plan, 2);
   logActivity(
     "6. Contribution weights assigned",
     "Platform evaluation scored usefulness, zeroed low-value work, and computed the settlement plan.",
@@ -1080,7 +1145,7 @@ async function runDemo() {
     await addContributions();
     await resolveMission();
     await settleMission();
-    logActivity("Demo complete", "The full Proof of Contribution flow executed successfully.");
+    logActivity("Demo complete", "The full SolveX flow executed successfully.");
   } catch (error) {
     logActivity("Demo failed", error.message, error.body || undefined);
   }
@@ -1130,64 +1195,72 @@ function attachListeners() {
     fillGeneratedKey(elements.prodApiKeyInput);
   });
 
-  document.getElementById("generate-company-wallet")?.addEventListener("click", async () => {
+  document.getElementById("generate-company-wallet")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await generateCompanyWallet();
+      await runWithButtonLoading(button, "Preparing wallet...", () => generateCompanyWallet());
     } catch (error) {
       logActivity("Wallet generation failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("create-mission-button")?.addEventListener("click", async () => {
+  document.getElementById("create-mission-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await createMission();
+      await runWithButtonLoading(button, "Creating mission...", () => createMission());
     } catch (error) {
       logActivity("Mission creation failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("fund-mission-button")?.addEventListener("click", async () => {
+  document.getElementById("fund-mission-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await fundMission();
+      await runWithButtonLoading(button, "Locking escrow...", () => fundMission());
     } catch (error) {
       logActivity("Funding failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("query-agent-button")?.addEventListener("click", async () => {
+  document.getElementById("query-agent-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await queryPlatformAgent();
+      await runWithButtonLoading(button, "Running x402 query...", () => queryPlatformAgent());
     } catch (error) {
       logActivity("x402 query failed", error.message, error.body?.details || error.body || undefined);
     }
   });
 
-  document.getElementById("add-contributions-button")?.addEventListener("click", async () => {
+  document.getElementById("add-contributions-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await addContributions();
+      await runWithButtonLoading(button, "Submitting contributions...", () => addContributions());
     } catch (error) {
       logActivity("Contribution submission failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("resolve-mission-button")?.addEventListener("click", async () => {
+  document.getElementById("resolve-mission-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await resolveMission();
+      await runWithButtonLoading(button, "Scoring contributions...", () => resolveMission());
     } catch (error) {
       logActivity("Resolution failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("settle-mission-button")?.addEventListener("click", async () => {
+  document.getElementById("settle-mission-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await settleMission();
+      await runWithButtonLoading(button, "Settling mission...", () => settleMission());
     } catch (error) {
       logActivity("Settlement failed", error.message, error.body || undefined);
     }
   });
 
-  document.getElementById("run-demo-button")?.addEventListener("click", async () => {
-    await runDemo();
+  document.getElementById("run-demo-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    await runWithButtonLoading(button, "Running full demo...", () => runDemo());
   });
 
   document.getElementById("clear-log")?.addEventListener("click", () => {
@@ -1195,27 +1268,37 @@ function attachListeners() {
     renderDemoActivity();
   });
 
-  document.getElementById("prod-generate-wallet")?.addEventListener("click", async () => {
+  document.getElementById("prod-generate-wallet")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      const wallet = await generateCompanyWallet();
+      const wallet = await runWithButtonLoading(button, "Preparing wallet...", () => generateCompanyWallet());
       elements.prodCompanyWallet.value = wallet.address;
-    } catch (error) {
-      window.alert(error.message);
-    }
-  });
-
-  elements.prodClarifyMission?.addEventListener("click", async () => {
-    try {
-      await clarifyProductionMission();
+      showProdStatus("Company wallet prepared and injected into the mission intake form.", "success");
     } catch (error) {
       showProdStatus(error.message, "error");
     }
   });
 
-  document.getElementById("prod-create-mission")?.addEventListener("click", async () => {
+  elements.prodBudget?.addEventListener("input", () => {
+    setFeePreviewFromBudget();
+  });
+
+  elements.prodClarifyMission?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    try {
+      showProdStatus("Platform agent is structuring the problem and computing the mission economics.", "info");
+      await runWithButtonLoading(button, "Clarifying mission...", () => clarifyProductionMission());
+    } catch (error) {
+      showProdStatus(error.message, "error");
+    }
+  });
+
+  document.getElementById("prod-create-mission")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
       hideProdStatus();
-      const mission = await createProductionMission();
+      showProdStatus("Creating the mission draft and applying the platform fee automatically.", "info");
+      const mission = await runWithButtonLoading(button, "Creating draft...", () => createProductionMission());
       state.selectedMissionId = mission.id;
       await refreshSelectedMission();
       renderProductionMissionList();
@@ -1224,9 +1307,11 @@ function attachListeners() {
     }
   });
 
-  document.getElementById("prod-fund-mission")?.addEventListener("click", async () => {
+  document.getElementById("prod-fund-mission")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await fundMission();
+      showProdStatus("Submitting EscrowCreate on XRPL and waiting for confirmation.", "info");
+      await runWithButtonLoading(button, "Locking escrow...", () => fundMission());
       renderProductionMissionList();
       showProdStatus("Selected mission funded through XRPL escrow.", "success");
     } catch (error) {
@@ -1239,10 +1324,14 @@ function attachListeners() {
     }
   });
 
-  document.getElementById("prod-refresh")?.addEventListener("click", async () => {
+  document.getElementById("prod-refresh")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     try {
-      await refreshMissions();
-      await refreshSelectedMission();
+      showProdStatus("Refreshing mission data from the backend.", "info");
+      await runWithButtonLoading(button, "Refreshing...", async () => {
+        await refreshMissions();
+        await refreshSelectedMission();
+      });
       showProdStatus("Mission data refreshed.", "info");
     } catch (error) {
       showProdStatus(error.message, "error");
@@ -1285,9 +1374,7 @@ async function boot() {
         ? "Use a company wallet for the mission. In local mock mode you can still test quickly."
         : "Use the funded company wallet that should actually lock the escrow budget on XRPL.";
     }
-    if (elements.prodFeePreview) {
-      elements.prodFeePreview.textContent = `${platformFeeBps() / 100}% of mission budget`;
-    }
+    setFeePreviewFromBudget();
     if (state.appConfig?.demoSharedApiKey && elements.demoKeyHelper) {
       elements.demoKeyHelper.textContent =
         "A shared demo key is preloaded for this site so judges can test the flow without extra setup.";
@@ -1315,7 +1402,7 @@ async function boot() {
     if (state.appConfig?.appMode === "demo") {
       logActivity("Initial load failed", error.message, error.body || undefined);
     } else {
-      window.alert(error.message);
+      showProdStatus(error.message, "error");
     }
   }
 }
