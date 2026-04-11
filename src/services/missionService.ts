@@ -6,6 +6,7 @@ import {
   FundMissionInput,
   Mission,
   ResolveMissionInput,
+  SettlementTransaction,
   SettlementPlan
 } from "../types";
 import { StorageService } from "./storageService";
@@ -25,8 +26,7 @@ export class MissionService {
   }
 
   async getMission(id: string): Promise<Mission> {
-    const missions = await this.storageService.listMissions();
-    const mission = missions.find((item) => item.id === id);
+    const mission = await this.storageService.getMission(id);
 
     if (!mission) {
       throw new Error(`Mission ${id} not found`);
@@ -177,12 +177,17 @@ export class MissionService {
     };
   }
 
-  async markPaid(missionId: string, payoutTxHashes: string[]): Promise<Mission> {
+  async markPaid(
+    missionId: string,
+    payoutTxHashes: string[],
+    settlementTransactions: SettlementTransaction[]
+  ): Promise<Mission> {
     const mission = await this.getMission(missionId);
 
     const updated: Mission = {
       ...mission,
       payoutTxHashes,
+      settlementTransactions,
       status: "paid",
       updatedAt: new Date().toISOString()
     };
@@ -196,6 +201,26 @@ export class MissionService {
     const updated: Mission = {
       ...mission,
       status,
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.storageService.saveMission(updated);
+  }
+
+  async markCanceledWithTransaction(missionId: string, txHash: string): Promise<Mission> {
+    const mission = await this.getMission(missionId);
+
+    const updated: Mission = {
+      ...mission,
+      status: "canceled",
+      payoutTxHashes: [...(mission.payoutTxHashes ?? []), txHash],
+      settlementTransactions: [
+        ...(mission.settlementTransactions ?? []),
+        {
+          txHash,
+          kind: "escrow_cancel"
+        }
+      ],
       updatedAt: new Date().toISOString()
     };
 

@@ -24,7 +24,7 @@ export const config = {
   host: process.env.HOST ?? "0.0.0.0",
   xrplServer: process.env.XRPL_SERVER ?? "wss://s.altnet.rippletest.net:51233",
   xrplExplorerBaseUrl: process.env.XRPL_EXPLORER_BASE_URL ?? "https://testnet.xrpl.org",
-  missionStorePath: path.resolve(cwd, process.env.MISSION_STORE_PATH ?? "./data/missions.json"),
+  databasePath: path.resolve(cwd, process.env.DATABASE_PATH ?? "./data/app.db"),
   adminApiKey: process.env.ADMIN_API_KEY ?? "",
   settlementSeed: process.env.XRPL_SETTLEMENT_SEED ?? "",
   treasurySeed: process.env.XRPL_TREASURY_SEED ?? "",

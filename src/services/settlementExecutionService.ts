@@ -1,7 +1,7 @@
 import { MissionService } from "./missionService";
 import { buildSettlementPlan } from "./settlementService";
 import { XrplService } from "./xrplService";
-import { Mission } from "../types";
+import { Mission, SettlementTransaction } from "../types";
 
 export class SettlementExecutionService {
   constructor(
@@ -62,12 +62,17 @@ export class SettlementExecutionService {
     );
 
     const payoutTxHashes: string[] = [];
+    const settlementTransactions: SettlementTransaction[] = [];
 
     const finishResult = await this.xrplService.finishEscrow({
       owner: mission.escrow.owner,
       offerSequence: mission.escrow.sequence
     });
     payoutTxHashes.push(finishResult.txHash);
+    settlementTransactions.push({
+      txHash: finishResult.txHash,
+      kind: "escrow_finish"
+    });
 
     for (const payout of plan.payouts) {
       if (!payout.qualifies || payout.payoutDrops === "0") {
@@ -80,6 +85,12 @@ export class SettlementExecutionService {
         sourceRole: "settlement"
       });
       payoutTxHashes.push(result.txHash);
+      settlementTransactions.push({
+        txHash: result.txHash,
+        kind: "contributor_payout",
+        destinationWallet: payout.contributorWallet,
+        amountDrops: payout.payoutDrops
+      });
     }
 
     if (plan.totalQualifiedWeight === 0 && plan.contributorPoolDrops !== "0") {
@@ -89,6 +100,12 @@ export class SettlementExecutionService {
         sourceRole: "settlement"
       });
       payoutTxHashes.push(refundResult.txHash);
+      settlementTransactions.push({
+        txHash: refundResult.txHash,
+        kind: "company_refund",
+        destinationWallet: mission.companyWallet,
+        amountDrops: plan.contributorPoolDrops
+      });
     }
 
     if (plan.platformFeeDrops !== "0" && mission.treasuryWallet && mission.treasuryWallet !== mission.platformWallet) {
@@ -98,10 +115,16 @@ export class SettlementExecutionService {
         sourceRole: "settlement"
       });
       payoutTxHashes.push(feeResult.txHash);
+      settlementTransactions.push({
+        txHash: feeResult.txHash,
+        kind: "platform_fee",
+        destinationWallet: mission.treasuryWallet,
+        amountDrops: plan.platformFeeDrops
+      });
     }
 
     return {
-      mission: await this.missionService.markPaid(missionId, payoutTxHashes),
+      mission: await this.missionService.markPaid(missionId, payoutTxHashes, settlementTransactions),
       payoutTxHashes
     };
   }
@@ -125,7 +148,7 @@ export class SettlementExecutionService {
     });
 
     return {
-      mission: await this.missionService.markCanceled(missionId, "canceled"),
+      mission: await this.missionService.markCanceledWithTransaction(missionId, result.txHash),
       txHash: result.txHash
     };
   }

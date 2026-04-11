@@ -11,8 +11,8 @@ services:
         value: 0.0.0.0
       - key: PORT
         value: 3000
-      - key: MISSION_STORE_PATH
-        value: /app/data/missions.json
+      - key: DATABASE_PATH
+        value: /app/data/app.db
       - key: ALLOW_DEMO_WALLETS
         value: false
       - key: USE_MOCK_XRPL

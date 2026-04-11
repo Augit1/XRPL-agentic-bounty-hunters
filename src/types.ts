@@ -39,6 +39,13 @@ export type MissionResolution = {
   notes?: string;
 };
 
+export type SettlementTransaction = {
+  txHash: string;
+  kind: "escrow_finish" | "contributor_payout" | "company_refund" | "platform_fee" | "escrow_cancel";
+  destinationWallet?: string;
+  amountDrops?: string;
+};
+
 export type Mission = {
   id: string;
   title: string;
@@ -55,6 +62,7 @@ export type Mission = {
   escrow?: EscrowInfo;
   resolution?: MissionResolution;
   payoutTxHashes?: string[];
+  settlementTransactions?: SettlementTransaction[];
 };
 
 export type CreateMissionInput = {
@@ -86,10 +94,6 @@ export type ResolveMissionInput = {
 export type FundMissionInput = {
   finishAfterSeconds?: number;
   cancelAfterSeconds?: number;
-};
-
-export type MissionStore = {
-  missions: Mission[];
 };
 
 export type SettlementLineItem = {

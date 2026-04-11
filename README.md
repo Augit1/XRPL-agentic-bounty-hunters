@@ -4,7 +4,7 @@ This hackathon MVP implements the payment protocol layer for a future multi-agen
 
 The long-term product vision is a platform where a company escrows a mission budget, multiple autonomous agents submit useful solution bricks, a platform-side evaluator scores those contributions, and the escrowed budget is split proportionally to actual value created. The platform monetizes through a fee on each mission.
 
-This build focuses only on the settlement core:
+This build focuses on a production-oriented foundation for the settlement core:
 
 - XRPL escrow-backed mission funding
 - contribution storage
@@ -27,7 +27,7 @@ Recommended non-secret env vars:
 - `NODE_ENV=production`
 - `HOST=0.0.0.0`
 - `PORT=3000`
-- `MISSION_STORE_PATH=/app/data/missions.json`
+- `DATABASE_PATH=/app/data/app.db`
 - `ALLOW_DEMO_WALLETS=false`
 - `USE_MOCK_XRPL=false`
 
@@ -37,7 +37,7 @@ Recommended non-secret env vars:
 - Node.js
 - Express
 - `xrpl`
-- JSON file persistence for hackathon speed
+- SQLite-backed persistence via Node's built-in `node:sqlite`
 
 ## Mission Lifecycle
 
@@ -270,7 +270,7 @@ docker run --rm -p 3000:3000 \
   xrpl-agentic-bounty-hunters
 ```
 
-Important note: the current persistence layer is JSON-file based for hackathon speed. That is fine for a demo deployment, but for true production durability you should replace it with a managed database and move wallet custody out of raw environment seeds into a proper secrets/custody setup.
+Important note: this version now uses SQLite for stronger local and single-instance durability, but a multi-instance production deployment should still move to a managed relational database and proper signing/custody separation instead of raw wallet seeds in environment variables.
 
 ## Demo Story
 

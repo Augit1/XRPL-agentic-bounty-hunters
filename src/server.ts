@@ -1,6 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { config, validateConfig } from "./config";
 import { StorageService } from "./services/storageService";
 import { ScoringService } from "./services/scoringService";
@@ -21,10 +22,27 @@ async function main(): Promise<void> {
     })
   );
   app.use(express.json({ limit: "1mb" }));
+  app.use((request, response, next) => {
+    const requestId = request.header("x-request-id") ?? randomUUID();
+    const startedAt = Date.now();
+    response.setHeader("x-request-id", requestId);
+    response.on("finish", () => {
+      console.log(
+        JSON.stringify({
+          requestId,
+          method: request.method,
+          path: request.originalUrl,
+          statusCode: response.statusCode,
+          durationMs: Date.now() - startedAt
+        })
+      );
+    });
+    next();
+  });
   app.use(express.static(path.resolve(process.cwd(), "public")));
 
-  const storageService = new StorageService(config.missionStorePath);
-  await storageService.ensureStore();
+  const storageService = new StorageService(config.databasePath);
+  await storageService.initialize();
 
   const settlementAddress = xrplService.getWalletAddress("settlement");
   const treasuryAddress = xrplService.getWalletAddress("treasury");
@@ -42,6 +60,15 @@ async function main(): Promise<void> {
       settlementAddress,
       treasuryAddress
     });
+  });
+
+  app.get("/ready", async (_request, response, next) => {
+    try {
+      await storageService.ping();
+      response.json({ ok: true });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post("/wallets/demo", requireAdminApiKey, async (_request, response) => {
@@ -62,9 +89,25 @@ async function main(): Promise<void> {
 
   app.use("/missions", createMissionRouter(missionService, settlementExecutionService, x402Adapter));
 
-  app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+  app.use((error: unknown, request: express.Request, response: express.Response, _next: express.NextFunction) => {
     const message = error instanceof Error ? error.message : "Unknown server error";
-    response.status(400).json({ error: message });
+    const statusCode =
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof (error as { statusCode?: unknown }).statusCode === "number"
+        ? ((error as { statusCode: number }).statusCode)
+        : 400;
+
+    console.error(
+      JSON.stringify({
+        level: "error",
+        method: request.method,
+        path: request.originalUrl,
+        message
+      })
+    );
+    response.status(statusCode).json({ error: message });
   });
 
   const server = app.listen(config.port, config.host, () => {
