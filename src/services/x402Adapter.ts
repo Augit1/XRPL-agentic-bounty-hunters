@@ -73,6 +73,8 @@ export class X402Adapter {
   private paymentHandler?: RequestHandler;
   private paymentFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   private demoBuyerAddress?: `0x${string}`;
+  private resourceServer?: { initialize: () => Promise<void> };
+  private initializationPromise?: Promise<void>;
 
   isEnabled(): boolean {
     return config.x402Enabled && Boolean(config.x402PayTo);
@@ -157,6 +159,8 @@ export class X402Adapter {
         config.x402Network,
         new ExactEvmServerScheme()
       );
+      this.resourceServer = resourceServer;
+      this.initializationPromise = resourceServer.initialize();
 
       this.paymentHandler = paymentMiddleware(
         {
@@ -215,6 +219,8 @@ export class X402Adapter {
     if (!this.isDemoBuyerConfigured()) {
       throw new Error("X402_DEMO_BUYER_PRIVATE_KEY is required to run the real x402 demo flow.");
     }
+
+    await this.ensureInitialized();
 
     const url = this.getLocalQueryUrl();
     const headers = {
@@ -277,6 +283,23 @@ export class X402Adapter {
 
   private getLocalQueryUrl(): string {
     return `http://127.0.0.1:${config.port}/x402${QUERY_ROUTE_PATH}`;
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    if (!this.paymentHandler) {
+      this.createQueryMiddleware();
+    }
+
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+    } else if (this.resourceServer) {
+      this.initializationPromise = this.resourceServer.initialize();
+      await this.initializationPromise;
+    }
   }
 
   private getDemoBuyerFetch(): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
