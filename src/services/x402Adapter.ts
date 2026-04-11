@@ -84,6 +84,53 @@ function responseDiagnostics(response: Response) {
   );
 }
 
+function formatStablecoinAmount(amount: string, decimals = 6): string {
+  const normalized = amount.replace(/^0+/, "") || "0";
+  const padded = normalized.padStart(decimals + 1, "0");
+  const whole = padded.slice(0, -decimals) || "0";
+  const fraction = padded.slice(-decimals).replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
+function buildHumanFix(paymentRequired: any, buyerAddress: string | null) {
+  const accepted = paymentRequired?.accepts?.[0];
+  if (!accepted) {
+    return null;
+  }
+
+  const symbol =
+    typeof accepted?.extra?.name === "string"
+      ? accepted.extra.name
+      : typeof accepted?.asset === "string"
+        ? accepted.asset
+        : "the required asset";
+  const amountAtomic = typeof accepted?.amount === "string" ? accepted.amount : null;
+  const amountDisplay =
+    amountAtomic && typeof accepted?.extra?.name === "string" && ["USDC", "EURC"].includes(accepted.extra.name)
+      ? `${formatStablecoinAmount(amountAtomic)} ${accepted.extra.name}`
+      : amountAtomic;
+
+  if (paymentRequired?.error === "invalid_exact_evm_insufficient_balance") {
+    return {
+      summary: "The x402 buyer wallet does not have enough token balance to pay the protected endpoint.",
+      action:
+        buyerAddress && amountDisplay
+          ? `Fund ${buyerAddress} with at least ${amountDisplay} on Base Sepolia and retry.`
+          : "Fund the x402 buyer wallet with the required asset balance and retry.",
+      buyerAddress,
+      requiredAmountAtomic: amountAtomic,
+      requiredAmountDisplay: amountDisplay,
+      assetSymbol: symbol,
+      asset: accepted?.asset ?? null,
+      payTo: accepted?.payTo ?? null,
+      network: accepted?.network ?? null,
+      note: "The XRPL mission flow is fine. This failure is on the x402 buyer funding side."
+    };
+  }
+
+  return null;
+}
+
 export class X402Adapter {
   private paymentHandler?: RequestHandler;
   private paymentFetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -305,7 +352,8 @@ export class X402Adapter {
           body: paidBody,
           paymentRequired: paidPaymentRequired,
           paymentResponse: paidPaymentResponse
-        }
+        },
+        humanFix: buildHumanFix(paidPaymentRequired, this.getDemoBuyerAddress())
       };
 
       console.error(

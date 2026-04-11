@@ -291,8 +291,10 @@ function renderExplorerItems(payload) {
       const token = `evm-account:${value}`;
       if (!seen.has(token)) {
         seen.add(token);
+        const normalizedKey = String(key).toLowerCase();
+        const label = normalizedKey.includes("asset") || normalizedKey.includes("token") ? "view token" : "view wallet";
         items.push(
-          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(x402AddressExplorerUrl(value), "view wallet")}</span>`
+          `<span class="explorer-chip">${escapeHtml(key)} ${explorerAnchor(x402AddressExplorerUrl(value), label)}</span>`
         );
       }
       return;
