@@ -223,7 +223,7 @@ h1 {
   font-size: clamp(2.8rem, 6vw, 5rem);
   line-height: 0.94;
   max-width: 12ch;
-  margin-bottom: 14px;
+  margin-bottom: 26px;
 }
 
 h2 {
@@ -710,6 +710,7 @@ h4 {
 
   h1 {
     max-width: none;
+    margin-bottom: 18px;
   }
 
   .button-row,
