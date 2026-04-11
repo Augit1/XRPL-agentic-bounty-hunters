@@ -74,10 +74,31 @@ async function api(path, options = {}) {
   });
 
   const text = await response.text();
-  const body = text ? JSON.parse(text) : null;
+  let body = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = {
+        raw: text,
+        message: text.trim().startsWith("<")
+          ? "The server returned HTML instead of JSON. This usually means the deployment is serving an error page or an old build."
+          : text
+      };
+    }
+  }
 
   if (!response.ok) {
-    const error = new Error(body?.error || body?.message || JSON.stringify(body));
+    const errorMessage =
+      body?.error ||
+      body?.message ||
+      (response.status === 401
+        ? "Request rejected. Save a valid admin key first."
+        : response.status === 403
+          ? "Request blocked by server policy for this environment."
+          : `Request failed with status ${response.status}.`);
+    const error = new Error(errorMessage);
     error.status = response.status;
     error.body = body;
     throw error;
@@ -331,7 +352,7 @@ async function createMission() {
 async function fundMission() {
   const mission = selectedMission();
   if (!mission) {
-    throw new Error("Create a mission before funding it.");
+    throw new Error("Create the mission first, then lock its budget in escrow.");
   }
 
   const result = await api(`/missions/${mission.id}/fund`, {
@@ -353,7 +374,7 @@ async function fundMission() {
 async function queryPlatformAgent() {
   const mission = selectedMission();
   if (!mission) {
-    throw new Error("Create a mission before querying the platform agent.");
+    throw new Error("Create the mission first, then query the platform agent.");
   }
 
   const result = await api(`/missions/${mission.id}/query-agent`, {
@@ -376,7 +397,7 @@ async function queryPlatformAgent() {
 async function addContributions() {
   const mission = selectedMission();
   if (!mission) {
-    throw new Error("Create and fund a mission before adding contributions.");
+    throw new Error("Create and fund the mission first, then submit contributions.");
   }
 
   await ensureContributionWallets();
@@ -406,7 +427,7 @@ async function addContributions() {
 async function resolveMission() {
   const mission = selectedMission();
   if (!mission) {
-    throw new Error("Create, fund, and populate a mission before resolving it.");
+    throw new Error("Create, fund, and populate the mission first, then resolve it.");
   }
 
   if (mission.contributions.length < 3) {
@@ -437,7 +458,7 @@ async function resolveMission() {
 async function settleMission() {
   const mission = selectedMission();
   if (!mission) {
-    throw new Error("Resolve a mission before settling it.");
+    throw new Error("Resolve the mission first, then settle it.");
   }
 
   const result = await api(`/missions/${mission.id}/settle`, {
