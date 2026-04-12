@@ -6,4 +6,5 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 npm-debug.log*
+imgs_do_not_push/
 .DS_Store
