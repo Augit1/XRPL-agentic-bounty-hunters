@@ -33,6 +33,14 @@ This repo currently implements the centralized MVP phase of the protocol:
 - deterministic payout splitting from scored contributions
 - progressive path toward decentralization later
 
+## Live Deployments
+
+- production app: [xrpl-agentic-bounty-hunters-production.onrender.com](https://xrpl-agentic-bounty-hunters-production.onrender.com)
+- demo app: [xrpl-agentic-bounty-hunters-demo.onrender.com](https://xrpl-agentic-bounty-hunters-demo.onrender.com)
+- docs / whitepaper site: [xrpl-agentic-bounty-hunters-docs.onrender.com](https://xrpl-agentic-bounty-hunters-docs.onrender.com)
+
+The production app is the company-facing workspace, the demo app is the guided hackathon walkthrough, and the docs site is the static protocol and whitepaper surface.
+
 ## Whitepaper Summary
 
 ### Problem
