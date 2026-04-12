@@ -900,14 +900,28 @@ function isIllustrationMission(mission) {
   return Boolean(mission?.isIllustration);
 }
 
+function isHiddenLegacyProductionMission(mission) {
+  return state.appConfig?.appMode === "production" && mission?.title === "Improve support reply quality";
+}
+
 function visibleProductionMissions() {
   if (state.appConfig?.appMode !== "production") {
     return state.missions;
   }
 
-  const usedTitles = new Set(state.missions.map((mission) => mission.title));
+  const liveMissions = state.missions.filter((mission) => !isHiddenLegacyProductionMission(mission));
+  const usedTitles = new Set(liveMissions.map((mission) => mission.title));
   const illustrative = ILLUSTRATIVE_PRODUCTION_MISSIONS.filter((mission) => !usedTitles.has(mission.title));
-  return [...state.missions, ...illustrative];
+  return [...liveMissions, ...illustrative];
+}
+
+function ensureSelectedVisibleMission() {
+  const missions = visibleProductionMissions();
+  const hasVisibleSelection = missions.some((mission) => mission.id === state.selectedMissionId);
+
+  if (!hasVisibleSelection) {
+    state.selectedMissionId = missions[0]?.id ?? null;
+  }
 }
 
 function renderProductionMissionList() {
@@ -1078,12 +1092,7 @@ async function loadAppState() {
   state.health = await api("/health");
   const { missions } = await api("/missions");
   state.missions = missions;
-  if (!state.selectedMissionId) {
-    const defaultMission = visibleProductionMissions()[0];
-    if (defaultMission) {
-      state.selectedMissionId = defaultMission.id;
-    }
-  }
+  ensureSelectedVisibleMission();
   applyAppMode();
   renderAll();
 }
@@ -1107,18 +1116,14 @@ async function refreshSelectedMission() {
   } else {
     state.missions.unshift(mission);
   }
+  ensureSelectedVisibleMission();
   renderAll();
 }
 
 async function refreshMissions() {
   const { missions } = await api("/missions");
   state.missions = missions;
-  if (!state.selectedMissionId) {
-    const defaultMission = visibleProductionMissions()[0];
-    if (defaultMission) {
-      state.selectedMissionId = defaultMission.id;
-    }
-  }
+  ensureSelectedVisibleMission();
   renderAll();
 }
 
