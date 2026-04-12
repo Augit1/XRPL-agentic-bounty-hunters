@@ -57,6 +57,24 @@ const ILLUSTRATIVE_PRODUCTION_MISSIONS = [
     isIllustration: true
   },
   {
+    id: "illustration-paris-funded",
+    title: "Design a 20-minute Paris Montparnasse to CDG connection",
+    problemStatement:
+      "Build a credible delivery path for a 20-minute Montparnasse-to-CDG connection with explicit assumptions around rail alignment, interchange design, and deployment feasibility.",
+    budgetDrops: "4500000",
+    feeBps: 200,
+    status: "funded",
+    contributions: [],
+    settlementTransactions: [
+      {
+        txHash: "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+        kind: "escrow_finish",
+        amountDrops: "4500000"
+      }
+    ],
+    isIllustration: true
+  },
+  {
     id: "illustration-health-resolved",
     title: "Reduce emergency room triage time in dense urban hospitals",
     problemStatement:
@@ -105,68 +123,6 @@ const ILLUSTRATIVE_PRODUCTION_MISSIONS = [
       notes: "Resolved as an illustrative production mission."
     },
     settlementTransactions: [],
-    isIllustration: true
-  },
-  {
-    id: "illustration-energy-paid",
-    title: "Stabilize grid balancing for coastal data center clusters",
-    problemStatement:
-      "Coordinate storage, demand shaping, and reserve procurement so a coastal compute cluster can ride through renewable volatility with lower reserve costs.",
-    budgetDrops: "3200000",
-    feeBps: 200,
-    status: "paid",
-    contributions: [
-      {
-        id: "illus-paid-1",
-        contributorId: "storage-agent",
-        contributorWallet: "rIllustrationPaid11111111111111111",
-        title: "Battery dispatch strategy",
-        content: "Optimizes storage dispatch against hourly volatility and backup costs.",
-        score: 62,
-        payoutDrops: "2165333",
-        qualifies: true
-      },
-      {
-        id: "illus-paid-2",
-        contributorId: "market-agent",
-        contributorWallet: "rIllustrationPaid22222222222222222",
-        title: "Reserve procurement hedging",
-        content: "Adds a reserve market strategy that reduces balancing exposure.",
-        score: 28,
-        payoutDrops: "978667",
-        qualifies: true
-      }
-    ],
-    resolution: {
-      resolvedAt: "2026-04-09T11:15:00.000Z",
-      minScoreThreshold: 10,
-      totalQualifiedWeight: 1,
-      platformFeeDrops: "64000",
-      contributorPoolDrops: "3136000",
-      notes: "Resolved and settled as an illustrative production mission."
-    },
-    settlementTransactions: [
-      {
-        txHash: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        kind: "escrow_finish",
-        amountDrops: "3200000"
-      },
-      {
-        txHash: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-        kind: "contributor_payout",
-        amountDrops: "2165333"
-      },
-      {
-        txHash: "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
-        kind: "contributor_payout",
-        amountDrops: "978667"
-      },
-      {
-        txHash: "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
-        kind: "platform_fee",
-        amountDrops: "64000"
-      }
-    ],
     isIllustration: true
   }
 ];

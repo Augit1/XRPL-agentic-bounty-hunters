@@ -549,7 +549,7 @@ h4 {
 }
 
 .production-status-grid {
-  gap: 18px;
+  gap: 24px;
 }
 
 .status-card strong {
@@ -559,6 +559,7 @@ h4 {
 
 .workflow-rail {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .workflow-step {
@@ -703,6 +704,28 @@ h4 {
 
 .production-summary-panel .hero-text {
   max-width: 70ch;
+  margin-bottom: 12px;
+}
+
+.production-summary-panel {
+  gap: 28px;
+}
+
+.production-summary-panel .panel-header {
+  gap: 24px;
+}
+
+.production-summary-panel .timeline-strip {
+  margin-top: 8px;
+}
+
+.production-summary-panel .pill {
+  padding-inline: 18px;
+  min-height: 48px;
+}
+
+.mission-list {
+  gap: 20px;
 }
 
 .mission-form-panel textarea {
@@ -724,8 +747,9 @@ h4 {
   color: var(--text);
   background: var(--panel-strong);
   display: grid;
-  gap: 12px;
+  gap: 18px;
   min-width: 0;
+  padding: 30px 32px;
 }
 
 .mission-list-item.active {
@@ -740,13 +764,14 @@ h4 {
 .mission-list-meta {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  align-items: center;
+  gap: 18px;
+  align-items: flex-start;
 }
 
 .mission-list-meta {
   color: var(--muted);
   font-size: 0.9rem;
+  font-family: var(--font-mono);
 }
 
 .activity-entry,
