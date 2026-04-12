@@ -1,26 +1,28 @@
 const DEMO_CONFIG = {
-  title: "Improve support reply quality",
+  title: "Design a 20-minute Paris Montparnasse to CDG connection",
   problemStatement:
-    "Improve support reply quality by coordinating multiple useful agent contributions and rewarding only work that materially improves the final answer.",
-  budgetDrops: "1000000",
-  feeBps: 1000,
+    "Find a credible way to connect Gare Montparnasse to Paris Charles de Gaulle Airport in 20 minutes. Contributions can propose new infrastructure, faster rail operations, station redesigns, interchange improvements, or phased deployment strategies. Assume the mission includes Paris Metro, RER, airport rail context, and interchange constraints as available problem context.",
+  budgetDrops: "4500000",
+  feeBps: 200,
   minScoreThreshold: 10,
-  notes: "Reward only the contributions that materially improve the final solution.",
+  notes: "Reward only the contributions that materially improve the plausibility, speed, and deployment realism of a 20-minute Montparnasse to CDG connection.",
   contributions: [
     {
       contributorId: "agent-a",
-      title: "Improved tone and structure",
-      content: "Proposes a more empathetic and structured support reply template."
+      title: "Direct express corridor concept",
+      content:
+        "Proposes a high-speed express alignment with limited stops, dedicated airport access, and an explicit 20-minute operating model."
     },
     {
       contributorId: "agent-b",
-      title: "Constraint-aware troubleshooting block",
-      content: "Adds a concise troubleshooting segment that reduces back-and-forth."
+      title: "Interchange and station operations redesign",
+      content:
+        "Focuses on Montparnasse and CDG passenger flow, transfer penalties, platform design, and operational changes that make the corridor credible."
     },
     {
       contributorId: "agent-c",
-      title: "Low-signal generic answer",
-      content: "Generic support copy with little mission-specific value."
+      title: "Low-signal generic suggestion",
+      content: "Suggests adding more buses and signage without solving the 20-minute rail connection requirement."
     }
   ],
   scores: [60, 30, 0]
@@ -343,11 +345,24 @@ function setTheme(theme) {
 }
 
 function platformFeeBps() {
-  return state.appConfig?.platformFeeBps ?? 1000;
+  return state.appConfig?.platformFeeBps ?? 200;
 }
 
 function platformFeePercentLabel(feeBps = platformFeeBps()) {
   return `${feeBps / 100}%`;
+}
+
+function formatUsdAmount(value) {
+  const normalized = String(value ?? "").trim();
+  if (!/^\d+$/.test(normalized)) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(Number(normalized));
 }
 
 function calculateFeeAmount(budgetDrops, feeBps = platformFeeBps()) {
@@ -365,7 +380,7 @@ function feePreviewText(budgetDrops, feeBps = platformFeeBps()) {
     return `${platformFeePercentLabel(feeBps)} of budget`;
   }
 
-  return `${feeAmount} drops`;
+  return `${formatUsdAmount(feeAmount)} fee (${platformFeePercentLabel(feeBps)} of ${formatUsdAmount(budgetDrops)})`;
 }
 
 function setFeePreviewFromBudget() {
@@ -399,7 +414,7 @@ function validateProductionMissionDraftInput(input = getProductionMissionDraftIn
   }
 
   if (!/^\d+$/.test(input.budgetDrops)) {
-    throw new Error("Budget must be a whole number of XRPL drops.");
+    throw new Error("Budget must be a whole-number dollar amount.");
   }
 
   if (BigInt(input.budgetDrops) === 0n) {
@@ -506,8 +521,8 @@ function renderMissionEchoFromMission(mission) {
     <div class="summary-card">
       <strong>Mission economics</strong>
       <div class="summary-meta">
-        <span>Total budget: ${escapeHtml(mission.budgetDrops)} drops</span>
-        <span>Platform fee: ${escapeHtml(calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0")} drops</span>
+        <span>Total budget: ${escapeHtml(formatUsdAmount(mission.budgetDrops))}</span>
+        <span>Platform fee: ${escapeHtml(formatUsdAmount(calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"))}</span>
         <span>Status: ${escapeHtml(missionStatusLabel(mission))}</span>
       </div>
     </div>
@@ -554,10 +569,10 @@ function renderClarification(clarification) {
     </div>
     <div class="pill-row">${dimensions}</div>
     <p class="helper-copy">
-      Proposed economics: ${escapeHtml(clarification.proposedEconomics?.totalBudgetDrops || "-")} drops total,
-      ${escapeHtml(String(clarification.proposedEconomics?.platformFeeDrops || "-"))} drops platform fee
+      Proposed economics: ${escapeHtml(formatUsdAmount(clarification.proposedEconomics?.totalBudgetDrops || "-"))} total,
+      ${escapeHtml(formatUsdAmount(String(clarification.proposedEconomics?.platformFeeDrops || "-")))} platform fee
       (${escapeHtml(platformFeePercentLabel(clarification.proposedEconomics?.platformFeeBps || platformFeeBps()))}),
-      ${escapeHtml(clarification.proposedEconomics?.contributorPoolDrops || "-")} drops for contributors.
+      ${escapeHtml(formatUsdAmount(clarification.proposedEconomics?.contributorPoolDrops || "-"))} for contributors.
     </p>
   `;
   renderClarificationEcho(clarification);
@@ -707,9 +722,9 @@ function renderWorkflow() {
 function renderDemoSummary() {
   const mission = selectedMission();
   elements.selectedMissionPill.textContent = mission ? mission.status : "No mission";
-  elements.metricBudget.textContent = mission ? `${mission.budgetDrops} drops` : "-";
+  elements.metricBudget.textContent = mission ? formatUsdAmount(mission.budgetDrops) : "-";
   elements.metricFee.textContent = mission
-    ? `${calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"} drops`
+    ? formatUsdAmount(calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0")
     : "-";
   elements.metricContributions.textContent = mission ? String(mission.contributions.length) : "-";
   elements.metricTransactions.textContent = mission ? String(mission.settlementTransactions?.length || 0) : "-";
@@ -738,8 +753,8 @@ function renderDemoSummary() {
     elements.settlementBreakdown.innerHTML = `
       <div class="summary-card">
         <div class="summary-meta">
-          <span>Platform fee: ${mission.resolution.platformFeeDrops}</span>
-          <span>Contributor pool: ${mission.resolution.contributorPoolDrops}</span>
+          <span>Platform fee: ${formatUsdAmount(mission.resolution.platformFeeDrops)}</span>
+          <span>Contributor pool: ${formatUsdAmount(mission.resolution.contributorPoolDrops)}</span>
           <span>Threshold: ${mission.resolution.minScoreThreshold}</span>
         </div>
       </div>
@@ -749,7 +764,7 @@ function renderDemoSummary() {
             <div class="summary-row">
               <span>${escapeHtml(contribution.contributorId)}</span>
               <span>score ${contribution.score ?? 0}</span>
-              <span>${contribution.payoutDrops ?? "0"} drops</span>
+              <span>${formatUsdAmount(contribution.payoutDrops ?? "0")}</span>
             </div>
           `
         )
@@ -765,7 +780,7 @@ function renderDemoSummary() {
         (transaction) => `
           <div class="summary-row">
             <span>${escapeHtml(transaction.kind)}</span>
-            <span>${escapeHtml(transaction.amountDrops || "-")}</span>
+            <span>${escapeHtml(transaction.amountDrops ? formatUsdAmount(transaction.amountDrops) : "-")}</span>
             <span>${explorerAnchor(transactionExplorerUrl(transaction.txHash), transaction.txHash)}</span>
           </div>
         `
@@ -806,7 +821,7 @@ function renderProductionMissionList() {
             <span class="pill muted">${escapeHtml(mission.status)}</span>
           </span>
           <span class="mission-list-meta">
-            <span>${escapeHtml(mission.budgetDrops)} drops</span>
+            <span>${escapeHtml(formatUsdAmount(mission.budgetDrops))}</span>
             <span>${mission.contributions.length} contributions</span>
           </span>
         </button>
@@ -853,8 +868,8 @@ function renderProductionSummary() {
   elements.prodDetailStatus.textContent = `Mission is currently ${missionStatusLabel(mission)}.`;
   elements.prodDetailStatusPill.textContent = missionStatusLabel(mission);
   elements.prodDetailProblem.textContent = mission.problemStatement;
-  elements.prodBudgetMetric.textContent = `${mission.budgetDrops} drops`;
-  elements.prodFeeMetric.textContent = `${calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0"} drops`;
+  elements.prodBudgetMetric.textContent = formatUsdAmount(mission.budgetDrops);
+  elements.prodFeeMetric.textContent = formatUsdAmount(calculateFeeAmount(mission.budgetDrops, mission.feeBps) || "0");
   elements.prodQualifiedMetric.textContent = String(mission.contributions.length);
   elements.prodTransactionsMetric.textContent = String(mission.settlementTransactions?.length || 0);
 
@@ -876,7 +891,7 @@ function renderProductionSummary() {
             <div class="summary-meta vertical-meta">
               <span>Agent: ${escapeHtml(contribution.contributorId)}</span>
               <span>Score: ${contribution.score ?? 0}</span>
-              <span>Payout: ${contribution.payoutDrops ?? "0"} drops</span>
+              <span>Payout: ${formatUsdAmount(contribution.payoutDrops ?? "0")}</span>
             </div>
           </div>
         `
@@ -891,8 +906,8 @@ function renderProductionSummary() {
     elements.prodResolutionSummary.innerHTML = `
       <div class="summary-card">
         <div class="summary-meta">
-          <span>Platform fee: ${mission.resolution.platformFeeDrops}</span>
-          <span>Contributor pool: ${mission.resolution.contributorPoolDrops}</span>
+          <span>Platform fee: ${formatUsdAmount(mission.resolution.platformFeeDrops)}</span>
+          <span>Contributor pool: ${formatUsdAmount(mission.resolution.contributorPoolDrops)}</span>
           <span>Threshold: ${mission.resolution.minScoreThreshold}</span>
         </div>
       </div>
@@ -908,7 +923,7 @@ function renderProductionSummary() {
         (transaction) => `
           <div class="summary-row">
             <span>${escapeHtml(transaction.kind)}</span>
-            <span>${escapeHtml(transaction.amountDrops || "-")}</span>
+            <span>${escapeHtml(transaction.amountDrops ? formatUsdAmount(transaction.amountDrops) : "-")}</span>
             <span>${explorerAnchor(transactionExplorerUrl(transaction.txHash), transaction.txHash)}</span>
           </div>
         `
@@ -1115,7 +1130,7 @@ async function queryPlatformAgent() {
     method: "POST",
     body: JSON.stringify({
       missionId: mission.id,
-      question: "What kind of contribution creates the strongest marginal improvement?"
+      question: "What kind of contribution most increases the probability of a credible 20-minute Montparnasse to CDG connection?"
     })
   });
 
@@ -1476,6 +1491,9 @@ async function boot() {
   if (elements.prodProblemStatement) {
     elements.prodProblemStatement.value = DEMO_CONFIG.problemStatement;
   }
+  if (elements.prodBudget) {
+    elements.prodBudget.value = DEMO_CONFIG.budgetDrops;
+  }
   renderDemoActivity();
 
   try {
@@ -1511,6 +1529,10 @@ async function boot() {
       demoWalletButton.textContent = usingHostedDemoWallets()
         ? "1. Use hosted company wallet"
         : "1. Generate company wallet";
+    }
+    const resolveButton = document.getElementById("resolve-mission-button");
+    if (resolveButton) {
+      resolveButton.textContent = "6. Resolve with 60 / 30 / 0 review";
     }
     if (state.appConfig?.appMode === "demo") {
       logActivity(

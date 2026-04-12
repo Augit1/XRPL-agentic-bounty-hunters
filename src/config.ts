@@ -37,7 +37,7 @@ export const config = {
   companySeed: process.env.XRPL_COMPANY_SEED ?? "",
   useMockXrpl: parseBoolean(process.env.USE_MOCK_XRPL, false),
   allowDemoWallets: parseBoolean(process.env.ALLOW_DEMO_WALLETS, true),
-  platformFeeBps: parseInteger(process.env.PLATFORM_FEE_BPS, 1000),
+  platformFeeBps: parseInteger(process.env.PLATFORM_FEE_BPS, 200),
   x402Enabled: parseBoolean(process.env.X402_ENABLED, false),
   x402FacilitatorUrl: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
   x402Network: process.env.X402_NETWORK ?? "eip155:84532",

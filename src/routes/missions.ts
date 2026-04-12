@@ -54,6 +54,47 @@ const intakeMissionSchema = z.object({
 
 function buildClarificationBrief(input: z.infer<typeof intakeMissionSchema>) {
   const { totalBudget, platformFee, contributorPool } = calculateFeeAndPool(input.budgetDrops, config.platformFeeBps);
+  const isParisTransitMission = /montparnasse|charles de gaulle|cdg|paris/i.test(
+    `${input.title} ${input.problemStatement}`
+  );
+
+  if (isParisTransitMission) {
+    return {
+      intakeSummary:
+        'The platform agent reframed this into a high-stakes urban mobility mission: design a credible path to a 20-minute connection between Paris Montparnasse and Charles de Gaulle Airport.',
+      clarifyingQuestions: [
+        "Is the 20-minute target expected to be a transfer-free connection or can a tightly managed interchange be acceptable?",
+        "What trade-off matters most to the company: speed to deployment, capital efficiency, or long-term system throughput?",
+        "Which constraints must be respected: heritage/tunneling limits, disruption during construction, airport security flows, or integration with existing RER/Metro/TGV lines?"
+      ],
+      structuredMission: {
+        objective: input.problemStatement,
+        expectedOutputs: [
+          "A corridor or service design that makes a 20-minute Montparnasse-to-CDG journey plausible",
+          "Station, interchange, and passenger-flow improvements that reduce transfer friction",
+          "A phased implementation path with explicit assumptions, risks, and integration points across the Paris rail network"
+        ],
+        successCriteria: [
+          "The proposal should materially reduce end-to-end travel time with clear operational reasoning.",
+          "Contributions should use Paris rail context such as Metro, RER, airport rail access, and interchange bottlenecks.",
+          "The strongest work should balance engineering feasibility, travel-time gains, and deployment realism."
+        ],
+        evaluationDimensions: [
+          "travel time reduction",
+          "engineering feasibility",
+          "network integration",
+          "capital efficiency",
+          "deployment realism"
+        ]
+      },
+      proposedEconomics: {
+        totalBudgetDrops: totalBudget.toString(),
+        platformFeeBps: config.platformFeeBps,
+        platformFeeDrops: platformFee.toString(),
+        contributorPoolDrops: contributorPool.toString()
+      }
+    };
+  }
 
   return {
     intakeSummary: `The platform agent reframed "${input.title}" into an escrow-backed mission with measurable outcomes and contributor attribution.`,

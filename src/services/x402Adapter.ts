@@ -184,6 +184,34 @@ export class X402Adapter {
   }
 
   buildQueryResponse(mission: Mission, question: string) {
+    const isParisTransitMission = /montparnasse|charles de gaulle|cdg|paris/i.test(
+      `${mission.title} ${mission.problemStatement}`
+    );
+
+    if (isParisTransitMission) {
+      return {
+        missionId: mission.id,
+        question,
+        answer: {
+          missionSummary: mission.problemStatement,
+          evaluationFocus: [
+            "Reward contributions that make a 20-minute Montparnasse-to-CDG connection more credible.",
+            "Prioritize engineering feasibility, interchange friction, and deployment realism.",
+            "Do not reward generic transport ideas that ignore Paris rail constraints."
+          ],
+          suggestedContributionAngles: [
+            "Propose a corridor, rolling-stock, or operating model that materially reduces end-to-end journey time.",
+            "Improve station design, passenger flow, or interchange logic at Montparnasse or CDG.",
+            "Add phased implementation logic, cost discipline, and network integration with Metro, RER, and airport access."
+          ],
+          currentSignal: {
+            contributionCount: mission.contributions.length,
+            status: mission.status
+          }
+        }
+      };
+    }
+
     return {
       missionId: mission.id,
       question,
