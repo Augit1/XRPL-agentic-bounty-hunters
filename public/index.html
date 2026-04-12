@@ -251,7 +251,10 @@
               <div class="form-grid">
                 <label>
                   Maximum budget ($)
-                  <input id="prod-budget" type="text" value="4500000" />
+                  <div class="currency-input">
+                    <span class="currency-prefix">$</span>
+                    <input id="prod-budget" type="text" inputmode="numeric" value="4500000" />
+                  </div>
                 </label>
                 <div class="metric-inline">
                   <span class="meta-label">Platform fee</span>

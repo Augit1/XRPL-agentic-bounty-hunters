@@ -206,6 +206,24 @@ textarea {
   resize: vertical;
 }
 
+.currency-input {
+  position: relative;
+}
+
+.currency-prefix {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.currency-input input {
+  padding-left: 42px;
+}
+
 code,
 pre {
   font-family: var(--font-mono);
@@ -712,6 +730,10 @@ h4 {
 
 .mission-list-item.active {
   border-color: color-mix(in srgb, var(--accent-2) 35%, var(--line));
+}
+
+.mission-list-item.illustration {
+  border-style: dashed;
 }
 
 .mission-list-topline,

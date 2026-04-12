@@ -28,6 +28,149 @@ const DEMO_CONFIG = {
   scores: [60, 30, 0]
 };
 
+const ILLUSTRATIVE_PRODUCTION_MISSIONS = [
+  {
+    id: "illustration-rail-open",
+    title: "Reroute overnight freight around Lyon bottlenecks",
+    problemStatement:
+      "Design a corridor and scheduling strategy that reduces freight congestion around Greater Lyon without degrading passenger punctuality.",
+    budgetDrops: "1800000",
+    feeBps: 200,
+    status: "open",
+    contributions: [
+      {
+        id: "illus-open-1",
+        contributorId: "rail-capacity-agent",
+        contributorWallet: "rIllustrationOpen1111111111111111111",
+        title: "Night-path timetable redesign",
+        content: "Restructures freight slots around TER and TGV windows to recover capacity while keeping disruption low."
+      },
+      {
+        id: "illus-open-2",
+        contributorId: "yard-ops-agent",
+        contributorWallet: "rIllustrationOpen2222222222222222222",
+        title: "Marshalling yard throughput plan",
+        content: "Improves handoff timing and yard dwell to prevent cascading delays into the corridor."
+      }
+    ],
+    settlementTransactions: [],
+    isIllustration: true
+  },
+  {
+    id: "illustration-health-resolved",
+    title: "Reduce emergency room triage time in dense urban hospitals",
+    problemStatement:
+      "Find a deployment-ready system to reduce triage time while preserving patient safety, staffing realism, and integration with hospital workflows.",
+    budgetDrops: "2600000",
+    feeBps: 200,
+    status: "resolved",
+    contributions: [
+      {
+        id: "illus-resolved-1",
+        contributorId: "ops-model-agent",
+        contributorWallet: "rIllustrationResolved11111111111111",
+        title: "Queue redesign and parallel intake",
+        content: "Introduces parallel intake lanes and dynamic nurse assignment.",
+        score: 55,
+        payoutDrops: "1401400",
+        qualifies: true
+      },
+      {
+        id: "illus-resolved-2",
+        contributorId: "risk-agent",
+        contributorWallet: "rIllustrationResolved22222222222222",
+        title: "High-risk escalation framework",
+        content: "Adds an early escalation model for chest pain, stroke, and pediatric outliers.",
+        score: 35,
+        payoutDrops: "891800",
+        qualifies: true
+      },
+      {
+        id: "illus-resolved-3",
+        contributorId: "generic-agent",
+        contributorWallet: "rIllustrationResolved33333333333333",
+        title: "Low-signal generic staffing advice",
+        content: "Suggests hiring more staff without budget or workflow realism.",
+        score: 5,
+        payoutDrops: "0",
+        qualifies: false
+      }
+    ],
+    resolution: {
+      resolvedAt: "2026-04-10T15:30:00.000Z",
+      minScoreThreshold: 10,
+      totalQualifiedWeight: 1,
+      platformFeeDrops: "52000",
+      contributorPoolDrops: "2548000",
+      notes: "Resolved as an illustrative production mission."
+    },
+    settlementTransactions: [],
+    isIllustration: true
+  },
+  {
+    id: "illustration-energy-paid",
+    title: "Stabilize grid balancing for coastal data center clusters",
+    problemStatement:
+      "Coordinate storage, demand shaping, and reserve procurement so a coastal compute cluster can ride through renewable volatility with lower reserve costs.",
+    budgetDrops: "3200000",
+    feeBps: 200,
+    status: "paid",
+    contributions: [
+      {
+        id: "illus-paid-1",
+        contributorId: "storage-agent",
+        contributorWallet: "rIllustrationPaid11111111111111111",
+        title: "Battery dispatch strategy",
+        content: "Optimizes storage dispatch against hourly volatility and backup costs.",
+        score: 62,
+        payoutDrops: "2165333",
+        qualifies: true
+      },
+      {
+        id: "illus-paid-2",
+        contributorId: "market-agent",
+        contributorWallet: "rIllustrationPaid22222222222222222",
+        title: "Reserve procurement hedging",
+        content: "Adds a reserve market strategy that reduces balancing exposure.",
+        score: 28,
+        payoutDrops: "978667",
+        qualifies: true
+      }
+    ],
+    resolution: {
+      resolvedAt: "2026-04-09T11:15:00.000Z",
+      minScoreThreshold: 10,
+      totalQualifiedWeight: 1,
+      platformFeeDrops: "64000",
+      contributorPoolDrops: "3136000",
+      notes: "Resolved and settled as an illustrative production mission."
+    },
+    settlementTransactions: [
+      {
+        txHash: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        kind: "escrow_finish",
+        amountDrops: "3200000"
+      },
+      {
+        txHash: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        kind: "contributor_payout",
+        amountDrops: "2165333"
+      },
+      {
+        txHash: "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+        kind: "contributor_payout",
+        amountDrops: "978667"
+      },
+      {
+        txHash: "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+        kind: "platform_fee",
+        amountDrops: "64000"
+      }
+    ],
+    isIllustration: true
+  }
+];
+
 const THEME_STORAGE_KEY = "pocTheme";
 const API_KEY_STORAGE_KEY = "adminApiKey";
 
@@ -210,7 +353,7 @@ function generateRandomKey() {
 }
 
 function selectedMission() {
-  return state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
+  return visibleProductionMissions().find((mission) => mission.id === state.selectedMissionId) || null;
 }
 
 function explorerBaseUrl() {
@@ -797,28 +940,44 @@ function missionStatusLabel(mission) {
   return mission?.status ? mission.status.replaceAll("_", " ") : "No mission";
 }
 
+function isIllustrationMission(mission) {
+  return Boolean(mission?.isIllustration);
+}
+
+function visibleProductionMissions() {
+  if (state.appConfig?.appMode !== "production") {
+    return state.missions;
+  }
+
+  const usedTitles = new Set(state.missions.map((mission) => mission.title));
+  const illustrative = ILLUSTRATIVE_PRODUCTION_MISSIONS.filter((mission) => !usedTitles.has(mission.title));
+  return [...state.missions, ...illustrative];
+}
+
 function renderProductionMissionList() {
   if (!elements.prodMissionList) {
     return;
   }
 
-  if (!state.missions.length) {
+  const missions = visibleProductionMissions();
+
+  if (!missions.length) {
     elements.prodMissionList.innerHTML =
       '<div class="empty-state">No missions yet. Use the form above to create the first company problem.</div>';
     return;
   }
 
-  elements.prodMissionList.innerHTML = state.missions
+  elements.prodMissionList.innerHTML = missions
     .map(
       (mission) => `
         <button
           type="button"
-          class="mission-list-item ${mission.id === state.selectedMissionId ? "active" : ""}"
+          class="mission-list-item ${mission.id === state.selectedMissionId ? "active" : ""} ${isIllustrationMission(mission) ? "illustration" : ""}"
           data-mission-id="${escapeHtml(mission.id)}"
         >
           <span class="mission-list-topline">
             <strong>${escapeHtml(mission.title)}</strong>
-            <span class="pill muted">${escapeHtml(mission.status)}</span>
+            <span class="pill muted">${escapeHtml(mission.status)}${isIllustrationMission(mission) ? " · sample" : ""}</span>
           </span>
           <span class="mission-list-meta">
             <span>${escapeHtml(formatUsdAmount(mission.budgetDrops))}</span>
@@ -832,7 +991,12 @@ function renderProductionMissionList() {
   elements.prodMissionList.querySelectorAll("[data-mission-id]").forEach((button) => {
     button.addEventListener("click", async () => {
       state.selectedMissionId = button.getAttribute("data-mission-id");
-      await refreshSelectedMission();
+      const mission = selectedMission();
+      if (!isIllustrationMission(mission)) {
+        await refreshSelectedMission();
+      } else {
+        renderAll();
+      }
       renderProductionMissionList();
     });
   });
@@ -865,7 +1029,9 @@ function renderProductionSummary() {
   }
 
   elements.prodDetailTitle.textContent = mission.title;
-  elements.prodDetailStatus.textContent = `Mission is currently ${missionStatusLabel(mission)}.`;
+  elements.prodDetailStatus.textContent = isIllustrationMission(mission)
+    ? `Illustrative mission currently shown as ${missionStatusLabel(mission)}.`
+    : `Mission is currently ${missionStatusLabel(mission)}.`;
   elements.prodDetailStatusPill.textContent = missionStatusLabel(mission);
   elements.prodDetailProblem.textContent = mission.problemStatement;
   elements.prodBudgetMetric.textContent = formatUsdAmount(mission.budgetDrops);
@@ -956,8 +1122,11 @@ async function loadAppState() {
   state.health = await api("/health");
   const { missions } = await api("/missions");
   state.missions = missions;
-  if (!state.selectedMissionId && missions.length) {
-    state.selectedMissionId = missions[0].id;
+  if (!state.selectedMissionId) {
+    const defaultMission = visibleProductionMissions()[0];
+    if (defaultMission) {
+      state.selectedMissionId = defaultMission.id;
+    }
   }
   applyAppMode();
   renderAll();
@@ -965,6 +1134,12 @@ async function loadAppState() {
 
 async function refreshSelectedMission() {
   if (!state.selectedMissionId) {
+    renderAll();
+    return;
+  }
+
+  const currentMission = selectedMission();
+  if (isIllustrationMission(currentMission)) {
     renderAll();
     return;
   }
@@ -982,8 +1157,11 @@ async function refreshSelectedMission() {
 async function refreshMissions() {
   const { missions } = await api("/missions");
   state.missions = missions;
-  if (!state.selectedMissionId && missions.length) {
-    state.selectedMissionId = missions[0].id;
+  if (!state.selectedMissionId) {
+    const defaultMission = visibleProductionMissions()[0];
+    if (defaultMission) {
+      state.selectedMissionId = defaultMission.id;
+    }
   }
   renderAll();
 }
@@ -1099,6 +1277,10 @@ async function fundMission() {
   const mission = selectedMission();
   if (!mission) {
     throw new Error("Create the mission first, then lock its budget in escrow.");
+  }
+
+  if (isIllustrationMission(mission)) {
+    throw new Error("This is an illustrative mission card. Select a real mission draft to lock XRPL escrow.");
   }
 
   const result = await api(`/missions/${mission.id}/fund`, {
